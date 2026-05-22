@@ -6,6 +6,7 @@
 <title>AI Marketing Hub</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
   * { font-family: 'Inter', sans-serif; }
@@ -515,8 +516,320 @@
     <!-- MEDIA TOOLS TAB -->
     <div id="tab-media" class="tab-content hidden p-8">
       <div class="mb-6">
-        <h2 class="text-2xl font-bold text-gray-800">Photo & Video AI Tools</h2>
-        <p class="text-gray-500 text-sm mt-1">The best AI tools for creating stunning visuals and videos</p>
+        <h2 class="text-2xl font-bold text-gray-800">Photo & Video Editor</h2>
+        <p class="text-gray-500 text-sm mt-1">Built-in editors + best AI tools — everything in one place</p>
+      </div>
+
+      <!-- ===== BUILT-IN VIDEO EDITOR ===== -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
+        <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-black to-gray-700 rounded-xl flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.868v6.264a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-gray-800">Built-in Video Editor</h3>
+              <p class="text-xs text-gray-500">Trim • Resize • Captions • Speed • Mute • GIF — works inside this app</p>
+            </div>
+          </div>
+          <span class="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">100% FREE</span>
+        </div>
+        <div class="p-6">
+          <!-- Upload area -->
+          <div id="vid-upload-area" class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-400 transition-colors mb-5"
+               onclick="document.getElementById('vid-file').click()"
+               ondragover="event.preventDefault();this.classList.add('border-indigo-400')"
+               ondragleave="this.classList.remove('border-indigo-400')"
+               ondrop="event.preventDefault();this.classList.remove('border-indigo-400');handleVidDrop(event)">
+            <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+            <p class="text-gray-500 font-medium">Click or drag & drop your video here</p>
+            <p class="text-gray-400 text-xs mt-1">MP4, MOV, AVI, WebM supported</p>
+            <input type="file" id="vid-file" accept="video/*" class="hidden" onchange="loadVideo(this)"/>
+          </div>
+
+          <!-- Video preview + controls (hidden until file loaded) -->
+          <div id="vid-editor" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Preview -->
+              <div>
+                <p class="text-sm font-medium text-gray-700 mb-2">Preview</p>
+                <video id="vid-preview" controls class="w-full rounded-xl bg-black max-h-64"></video>
+                <p id="vid-info" class="text-xs text-gray-400 mt-1"></p>
+              </div>
+              <!-- Controls -->
+              <div class="space-y-4">
+                <!-- Operation selector -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">What do you want to do?</label>
+                  <select id="vid-op" onchange="showVidOptions()" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors">
+                    <option value="trim">✂️ Trim video (cut start/end)</option>
+                    <option value="resize">📐 Resize for platform (TikTok / Instagram / YouTube)</option>
+                    <option value="speed">⚡ Change speed (fast / slow)</option>
+                    <option value="mute">🔇 Remove audio / Mute</option>
+                    <option value="caption">📝 Add text caption on video</option>
+                    <option value="gif">🎞️ Convert to GIF</option>
+                    <option value="audio">🎵 Extract audio (MP3)</option>
+                    <option value="compress">📦 Compress (reduce file size)</option>
+                  </select>
+                </div>
+
+                <!-- Trim options -->
+                <div id="opt-trim" class="vid-opt space-y-3">
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="text-xs font-medium text-gray-600">Start time (seconds)</label>
+                      <input type="number" id="trim-start" value="0" min="0" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500"/>
+                    </div>
+                    <div>
+                      <label class="text-xs font-medium text-gray-600">End time (seconds)</label>
+                      <input type="number" id="trim-end" value="30" min="1" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500"/>
+                    </div>
+                  </div>
+                  <p class="text-xs text-gray-400">Tip: Play the video above to find the exact seconds you want</p>
+                </div>
+
+                <!-- Resize options -->
+                <div id="opt-resize" class="vid-opt hidden">
+                  <label class="text-xs font-medium text-gray-600 mb-1 block">Platform format</label>
+                  <div class="grid grid-cols-3 gap-2">
+                    <label class="flex flex-col items-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-indigo-400 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+                      <input type="radio" name="resize-platform" value="tiktok" class="hidden" checked/>
+                      <span class="text-lg">📱</span>
+                      <span class="text-xs font-medium mt-1">TikTok</span>
+                      <span class="text-xs text-gray-400">9:16</span>
+                    </label>
+                    <label class="flex flex-col items-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-indigo-400 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+                      <input type="radio" name="resize-platform" value="instagram" class="hidden"/>
+                      <span class="text-lg">📸</span>
+                      <span class="text-xs font-medium mt-1">Instagram</span>
+                      <span class="text-xs text-gray-400">1:1</span>
+                    </label>
+                    <label class="flex flex-col items-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-indigo-400 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+                      <input type="radio" name="resize-platform" value="youtube" class="hidden"/>
+                      <span class="text-lg">▶️</span>
+                      <span class="text-xs font-medium mt-1">YouTube</span>
+                      <span class="text-xs text-gray-400">16:9</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Speed options -->
+                <div id="opt-speed" class="vid-opt hidden">
+                  <label class="text-xs font-medium text-gray-600 mb-1 block">Speed</label>
+                  <div class="grid grid-cols-4 gap-2">
+                    <label class="flex flex-col items-center p-2 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-indigo-400 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+                      <input type="radio" name="speed-val" value="0.5" class="hidden"/><span class="text-sm font-bold">0.5x</span><span class="text-xs text-gray-400">Slow</span>
+                    </label>
+                    <label class="flex flex-col items-center p-2 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-indigo-400 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+                      <input type="radio" name="speed-val" value="0.75" class="hidden"/><span class="text-sm font-bold">0.75x</span><span class="text-xs text-gray-400">Slow</span>
+                    </label>
+                    <label class="flex flex-col items-center p-2 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-indigo-400 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+                      <input type="radio" name="speed-val" value="1.5" class="hidden"/><span class="text-sm font-bold">1.5x</span><span class="text-xs text-gray-400">Fast</span>
+                    </label>
+                    <label class="flex flex-col items-center p-2 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-indigo-400 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+                      <input type="radio" name="speed-val" value="2" class="hidden" checked/><span class="text-sm font-bold">2x</span><span class="text-xs text-gray-400">Fast</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Caption options -->
+                <div id="opt-caption" class="vid-opt hidden space-y-3">
+                  <div>
+                    <label class="text-xs font-medium text-gray-600">Caption text</label>
+                    <input type="text" id="caption-text" placeholder="e.g. Your Brand Name" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500"/>
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="text-xs font-medium text-gray-600">Position</label>
+                      <select id="caption-pos" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500">
+                        <option value="top">Top</option>
+                        <option value="center">Center</option>
+                        <option value="bottom" selected>Bottom</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="text-xs font-medium text-gray-600">Color</label>
+                      <select id="caption-color" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500">
+                        <option value="white">White</option>
+                        <option value="yellow">Yellow</option>
+                        <option value="black">Black</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- GIF options -->
+                <div id="opt-gif" class="vid-opt hidden space-y-3">
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="text-xs font-medium text-gray-600">Start (sec)</label>
+                      <input type="number" id="gif-start" value="0" min="0" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500"/>
+                    </div>
+                    <div>
+                      <label class="text-xs font-medium text-gray-600">Duration (sec)</label>
+                      <input type="number" id="gif-dur" value="5" min="1" max="15" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500"/>
+                    </div>
+                  </div>
+                  <p class="text-xs text-gray-400">Max 15 seconds for smooth GIF</p>
+                </div>
+
+                <!-- Mute / Audio / Compress: no extra options -->
+                <div id="opt-mute" class="vid-opt hidden"><p class="text-sm text-gray-500 bg-gray-50 rounded-xl p-3">Audio track will be removed from the video.</p></div>
+                <div id="opt-audio" class="vid-opt hidden"><p class="text-sm text-gray-500 bg-gray-50 rounded-xl p-3">Audio will be extracted as an MP3 file.</p></div>
+                <div id="opt-compress" class="vid-opt hidden"><p class="text-sm text-gray-500 bg-gray-50 rounded-xl p-3">Video will be compressed to reduce file size (lower bitrate).</p></div>
+
+                <!-- Process button -->
+                <button onclick="processVideo()" id="vid-process-btn" class="w-full py-3 gradient-bg text-white rounded-xl font-bold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span id="vid-btn-text">Process Video</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Progress + output -->
+            <div id="vid-progress-wrap" class="hidden mt-4">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-sm font-medium text-indigo-700" id="vid-progress-label">Processing...</span>
+                <span class="text-sm text-indigo-600" id="vid-progress-pct">0%</span>
+              </div>
+              <div class="w-full bg-gray-100 rounded-full h-3">
+                <div id="vid-progress-bar" class="gradient-bg h-3 rounded-full transition-all duration-300" style="width:0%"></div>
+              </div>
+            </div>
+
+            <div id="vid-output" class="hidden mt-5 p-4 bg-green-50 border border-green-200 rounded-xl">
+              <p class="text-green-700 font-semibold text-sm mb-3">✅ Done! Your video is ready.</p>
+              <div id="vid-output-preview" class="mb-3"></div>
+              <a id="vid-download-btn" href="#" download class="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Download
+              </a>
+            </div>
+
+            <button onclick="resetVideoEditor()" class="mt-3 text-xs text-gray-400 hover:text-gray-600 transition-colors">← Upload a different video</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== BUILT-IN PHOTO EDITOR ===== -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
+        <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-gray-800">Built-in Photo Editor</h3>
+              <p class="text-xs text-gray-500">Filters • Resize • Text overlay • Brightness • Rotate</p>
+            </div>
+          </div>
+          <span class="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">100% FREE</span>
+        </div>
+        <div class="p-6">
+          <div id="photo-upload-area" class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-purple-400 transition-colors"
+               onclick="document.getElementById('photo-file').click()"
+               ondragover="event.preventDefault();this.classList.add('border-purple-400')"
+               ondragleave="this.classList.remove('border-purple-400')"
+               ondrop="event.preventDefault();this.classList.remove('border-purple-400');handlePhotoDrop(event)">
+            <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <p class="text-gray-500 font-medium">Click or drag & drop your photo here</p>
+            <p class="text-gray-400 text-xs mt-1">JPG, PNG, WebP supported</p>
+            <input type="file" id="photo-file" accept="image/*" class="hidden" onchange="loadPhoto(this)"/>
+          </div>
+
+          <div id="photo-editor" class="hidden mt-5">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Canvas preview -->
+              <div>
+                <p class="text-sm font-medium text-gray-700 mb-2">Preview</p>
+                <canvas id="photo-canvas" class="w-full rounded-xl border border-gray-200 max-h-72 object-contain"></canvas>
+              </div>
+              <!-- Controls -->
+              <div class="space-y-4">
+                <!-- Filters -->
+                <div>
+                  <label class="text-sm font-medium text-gray-700 block mb-2">Filter</label>
+                  <div class="grid grid-cols-4 gap-2">
+                    <button onclick="applyFilter('none')" class="filter-btn py-2 text-xs font-medium border-2 border-gray-200 rounded-lg hover:border-purple-400 transition-colors">Normal</button>
+                    <button onclick="applyFilter('grayscale(100%)')" class="filter-btn py-2 text-xs font-medium border-2 border-gray-200 rounded-lg hover:border-purple-400 transition-colors">B&W</button>
+                    <button onclick="applyFilter('sepia(100%)')" class="filter-btn py-2 text-xs font-medium border-2 border-gray-200 rounded-lg hover:border-purple-400 transition-colors">Sepia</button>
+                    <button onclick="applyFilter('saturate(200%)')" class="filter-btn py-2 text-xs font-medium border-2 border-gray-200 rounded-lg hover:border-purple-400 transition-colors">Vivid</button>
+                    <button onclick="applyFilter('invert(100%)')" class="filter-btn py-2 text-xs font-medium border-2 border-gray-200 rounded-lg hover:border-purple-400 transition-colors">Invert</button>
+                    <button onclick="applyFilter('blur(2px)')" class="filter-btn py-2 text-xs font-medium border-2 border-gray-200 rounded-lg hover:border-purple-400 transition-colors">Blur</button>
+                    <button onclick="applyFilter('contrast(150%) saturate(130%)')" class="filter-btn py-2 text-xs font-medium border-2 border-gray-200 rounded-lg hover:border-purple-400 transition-colors">Pop</button>
+                    <button onclick="applyFilter('brightness(120%) contrast(90%)')" class="filter-btn py-2 text-xs font-medium border-2 border-gray-200 rounded-lg hover:border-purple-400 transition-colors">Soft</button>
+                  </div>
+                </div>
+
+                <!-- Adjustments -->
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-gray-700 block">Adjustments</label>
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs text-gray-500 w-20">Brightness</span>
+                    <input type="range" id="adj-brightness" min="50" max="200" value="100" oninput="applyAdjustments()" class="flex-1 accent-purple-500"/>
+                    <span class="text-xs text-gray-400 w-8" id="val-brightness">100</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs text-gray-500 w-20">Contrast</span>
+                    <input type="range" id="adj-contrast" min="50" max="200" value="100" oninput="applyAdjustments()" class="flex-1 accent-purple-500"/>
+                    <span class="text-xs text-gray-400 w-8" id="val-contrast">100</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs text-gray-500 w-20">Saturation</span>
+                    <input type="range" id="adj-saturation" min="0" max="300" value="100" oninput="applyAdjustments()" class="flex-1 accent-purple-500"/>
+                    <span class="text-xs text-gray-400 w-8" id="val-saturation">100</span>
+                  </div>
+                </div>
+
+                <!-- Text overlay -->
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-gray-700">Add Text</label>
+                  <div class="flex gap-2">
+                    <input type="text" id="photo-text" placeholder="e.g. Sale 50% Off!" class="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-purple-500"/>
+                    <select id="photo-text-pos" class="px-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-purple-500">
+                      <option value="top">Top</option>
+                      <option value="center">Center</option>
+                      <option value="bottom" selected>Bottom</option>
+                    </select>
+                  </div>
+                  <div class="flex gap-2">
+                    <input type="color" id="photo-text-color" value="#ffffff" class="w-10 h-9 rounded-lg border-2 border-gray-200 cursor-pointer"/>
+                    <input type="range" id="photo-text-size" min="16" max="80" value="32" class="flex-1 accent-purple-500"/>
+                    <button onclick="addTextToPhoto()" class="px-3 py-2 bg-purple-500 text-white rounded-lg text-xs font-bold hover:bg-purple-600 transition-colors">Add</button>
+                  </div>
+                </div>
+
+                <!-- Resize + Rotate -->
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-xs font-medium text-gray-600 mb-1 block">Resize for</label>
+                    <select id="photo-resize" onchange="resizePhoto()" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-purple-500">
+                      <option value="">Keep original</option>
+                      <option value="1080,1080">Instagram Square (1080×1080)</option>
+                      <option value="1080,1920">TikTok / Stories (1080×1920)</option>
+                      <option value="1200,628">Facebook Ad (1200×628)</option>
+                      <option value="1280,720">YouTube Thumb (1280×720)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-gray-600 mb-1 block">Rotate</label>
+                    <div class="flex gap-2">
+                      <button onclick="rotatePhoto(-90)" class="flex-1 py-2 border-2 border-gray-200 rounded-lg text-xs font-medium hover:border-purple-400 transition-colors">↺ Left</button>
+                      <button onclick="rotatePhoto(90)" class="flex-1 py-2 border-2 border-gray-200 rounded-lg text-xs font-medium hover:border-purple-400 transition-colors">↻ Right</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Download -->
+                <button onclick="downloadPhoto()" class="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                  Download Edited Photo
+                </button>
+              </div>
+            </div>
+            <button onclick="resetPhotoEditor()" class="mt-3 text-xs text-gray-400 hover:text-gray-600 transition-colors">← Upload a different photo</button>
+          </div>
+        </div>
       </div>
 
       <div class="mb-8">
@@ -989,6 +1302,323 @@ function copyResult(id) {
 document.getElementById('api-key-input').addEventListener('keypress', function(e) {
   if (e.key === 'Enter') saveApiKey();
 });
+
+// ═══════════════════════════════════════════════
+// VIDEO EDITOR (FFmpeg.wasm)
+// ═══════════════════════════════════════════════
+const { createFFmpeg, fetchFile } = FFmpeg;
+const ffmpeg = createFFmpeg({ log: false });
+let ffmpegLoaded = false;
+let currentVideoFile = null;
+
+async function ensureFFmpeg() {
+  if (!ffmpegLoaded) {
+    document.getElementById('vid-btn-text').textContent = 'Loading video engine (once)...';
+    await ffmpeg.load();
+    ffmpegLoaded = true;
+    document.getElementById('vid-btn-text').textContent = 'Process Video';
+  }
+}
+
+function loadVideo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  currentVideoFile = file;
+  const url = URL.createObjectURL(file);
+  const preview = document.getElementById('vid-preview');
+  preview.src = url;
+  preview.onloadedmetadata = () => {
+    document.getElementById('vid-info').textContent =
+      `Duration: ${Math.round(preview.duration)}s | Size: ${(file.size/1024/1024).toFixed(1)}MB`;
+    document.getElementById('trim-end').value = Math.round(preview.duration);
+    document.getElementById('gif-dur').value = Math.min(5, Math.round(preview.duration));
+  };
+  document.getElementById('vid-upload-area').classList.add('hidden');
+  document.getElementById('vid-editor').classList.remove('hidden');
+  document.getElementById('vid-output').classList.add('hidden');
+  showVidOptions();
+}
+
+function handleVidDrop(e) {
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('video/')) {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById('vid-file').files = dt.files;
+    loadVideo(document.getElementById('vid-file'));
+  }
+}
+
+function showVidOptions() {
+  document.querySelectorAll('.vid-opt').forEach(el => el.classList.add('hidden'));
+  const op = document.getElementById('vid-op').value;
+  const el = document.getElementById('opt-' + op);
+  if (el) el.classList.remove('hidden');
+}
+
+async function processVideo() {
+  if (!currentVideoFile) return;
+  try {
+    await ensureFFmpeg();
+  } catch(e) {
+    alert('Failed to load video engine: ' + e.message);
+    return;
+  }
+
+  const op = document.getElementById('vid-op').value;
+  const btn = document.getElementById('vid-process-btn');
+  btn.disabled = true;
+
+  document.getElementById('vid-progress-wrap').classList.remove('hidden');
+  document.getElementById('vid-output').classList.add('hidden');
+  setProgress(5, 'Reading file...');
+
+  const inName = 'input.' + currentVideoFile.name.split('.').pop();
+  ffmpeg.FS('writeFile', inName, await fetchFile(currentVideoFile));
+  setProgress(20, 'Processing...');
+
+  let outName = 'output.mp4';
+  let mimeType = 'video/mp4';
+  let args = [];
+
+  try {
+    if (op === 'trim') {
+      const start = document.getElementById('trim-start').value;
+      const end   = document.getElementById('trim-end').value;
+      const dur   = end - start;
+      args = ['-i', inName, '-ss', String(start), '-t', String(dur), '-c', 'copy', outName];
+
+    } else if (op === 'resize') {
+      const plat = document.querySelector('input[name="resize-platform"]:checked').value;
+      const scales = { tiktok:'1080:1920', instagram:'1080:1080', youtube:'1920:1080' };
+      const s = scales[plat];
+      args = ['-i', inName, '-vf',
+        `scale=${s}:force_original_aspect_ratio=decrease,pad=${s}:(ow-iw)/2:(oh-ih)/2:black`,
+        '-c:a', 'copy', outName];
+
+    } else if (op === 'speed') {
+      const spd = document.querySelector('input[name="speed-val"]:checked').value;
+      const pts = (1/parseFloat(spd)).toFixed(4);
+      const atempo = Math.min(2.0, Math.max(0.5, parseFloat(spd)));
+      args = ['-i', inName, '-vf', `setpts=${pts}*PTS`, '-af', `atempo=${atempo}`, outName];
+
+    } else if (op === 'mute') {
+      args = ['-i', inName, '-an', '-c:v', 'copy', outName];
+
+    } else if (op === 'caption') {
+      const text  = (document.getElementById('caption-text').value || 'Your Text').replace(/'/g, "\\'").replace(/:/g, "\\:");
+      const pos   = document.getElementById('caption-pos').value;
+      const color = document.getElementById('caption-color').value;
+      const yMap  = { top:'50', center:'(h-text_h)/2', bottom:'h-text_h-50' };
+      args = ['-i', inName, '-vf',
+        `drawtext=text='${text}':fontsize=48:fontcolor=${color}:borderw=3:bordercolor=black:x=(w-text_w)/2:y=${yMap[pos]}`,
+        '-c:a', 'copy', outName];
+
+    } else if (op === 'gif') {
+      outName = 'output.gif';
+      mimeType = 'image/gif';
+      const gs = document.getElementById('gif-start').value;
+      const gd = document.getElementById('gif-dur').value;
+      args = ['-i', inName, '-ss', String(gs), '-t', String(gd),
+              '-vf', 'scale=480:-1:flags=lanczos,fps=12', outName];
+
+    } else if (op === 'audio') {
+      outName = 'output.mp3';
+      mimeType = 'audio/mp3';
+      args = ['-i', inName, '-vn', '-acodec', 'libmp3lame', '-q:a', '2', outName];
+
+    } else if (op === 'compress') {
+      args = ['-i', inName, '-vcodec', 'libx264', '-crf', '28', '-preset', 'fast', '-acodec', 'aac', outName];
+    }
+
+    setProgress(40, 'Processing video...');
+    await ffmpeg.run(...args);
+    setProgress(85, 'Preparing download...');
+
+    const data = ffmpeg.FS('readFile', outName);
+    const blob = new Blob([data.buffer], { type: mimeType });
+    const url  = URL.createObjectURL(blob);
+
+    const dlBtn = document.getElementById('vid-download-btn');
+    dlBtn.href = url;
+    dlBtn.download = outName;
+
+    const prevWrap = document.getElementById('vid-output-preview');
+    prevWrap.innerHTML = '';
+    if (mimeType.startsWith('video')) {
+      prevWrap.innerHTML = `<video src="${url}" controls class="w-full rounded-xl max-h-48 bg-black"></video>`;
+    } else if (mimeType === 'image/gif') {
+      prevWrap.innerHTML = `<img src="${url}" class="w-full rounded-xl max-h-48 object-contain"/>`;
+    } else {
+      prevWrap.innerHTML = `<audio src="${url}" controls class="w-full"></audio>`;
+    }
+
+    setProgress(100, 'Done!');
+    document.getElementById('vid-output').classList.remove('hidden');
+
+    // cleanup
+    try { ffmpeg.FS('unlink', inName); } catch(e) {}
+    try { ffmpeg.FS('unlink', outName); } catch(e) {}
+
+  } catch(err) {
+    setProgress(0, 'Error: ' + err.message);
+    alert('Processing failed: ' + err.message + '\n\nTry a shorter/smaller video first.');
+  }
+
+  btn.disabled = false;
+  document.getElementById('vid-btn-text').textContent = 'Process Video';
+}
+
+function setProgress(pct, label) {
+  document.getElementById('vid-progress-bar').style.width = pct + '%';
+  document.getElementById('vid-progress-pct').textContent = pct + '%';
+  document.getElementById('vid-progress-label').textContent = label;
+}
+
+function resetVideoEditor() {
+  currentVideoFile = null;
+  document.getElementById('vid-upload-area').classList.remove('hidden');
+  document.getElementById('vid-editor').classList.add('hidden');
+  document.getElementById('vid-progress-wrap').classList.add('hidden');
+  document.getElementById('vid-output').classList.add('hidden');
+  document.getElementById('vid-file').value = '';
+}
+
+// ═══════════════════════════════════════════════
+// PHOTO EDITOR (Canvas API)
+// ═══════════════════════════════════════════════
+let photoImg = null;
+let photoRotation = 0;
+let currentFilter = 'none';
+
+function loadPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    photoImg = new Image();
+    photoImg.onload = () => {
+      photoRotation = 0;
+      currentFilter = 'none';
+      document.getElementById('adj-brightness').value = 100;
+      document.getElementById('adj-contrast').value = 100;
+      document.getElementById('adj-saturation').value = 100;
+      renderPhoto();
+      document.getElementById('photo-upload-area').classList.add('hidden');
+      document.getElementById('photo-editor').classList.remove('hidden');
+    };
+    photoImg.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handlePhotoDrop(e) {
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById('photo-file').files = dt.files;
+    loadPhoto(document.getElementById('photo-file'));
+  }
+}
+
+function renderPhoto() {
+  if (!photoImg) return;
+  const canvas = document.getElementById('photo-canvas');
+  const isRotated90 = Math.abs(photoRotation % 180) === 90;
+  canvas.width  = isRotated90 ? photoImg.height : photoImg.width;
+  canvas.height = isRotated90 ? photoImg.width  : photoImg.height;
+  const ctx = canvas.getContext('2d');
+
+  // Build filter string
+  const b = document.getElementById('adj-brightness').value;
+  const c = document.getElementById('adj-contrast').value;
+  const s = document.getElementById('adj-saturation').value;
+  document.getElementById('val-brightness').textContent = b;
+  document.getElementById('val-contrast').textContent = c;
+  document.getElementById('val-saturation').textContent = s;
+
+  let filterStr = `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
+  if (currentFilter !== 'none') filterStr += ' ' + currentFilter;
+  ctx.filter = filterStr;
+
+  ctx.save();
+  ctx.translate(canvas.width/2, canvas.height/2);
+  ctx.rotate(photoRotation * Math.PI / 180);
+  ctx.drawImage(photoImg, -photoImg.width/2, -photoImg.height/2);
+  ctx.restore();
+}
+
+function applyFilter(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('border-purple-500','bg-purple-50'));
+  event.target.classList.add('border-purple-500','bg-purple-50');
+  renderPhoto();
+}
+
+function applyAdjustments() { renderPhoto(); }
+
+function addTextToPhoto() {
+  if (!photoImg) return;
+  const canvas = document.getElementById('photo-canvas');
+  const ctx = canvas.getContext('2d');
+  const text  = document.getElementById('photo-text').value.trim();
+  if (!text) return;
+  const pos   = document.getElementById('photo-text-pos').value;
+  const color = document.getElementById('photo-text-color').value;
+  const size  = parseInt(document.getElementById('photo-text-size').value);
+  ctx.font = `bold ${size}px Inter, sans-serif`;
+  ctx.fillStyle = color;
+  ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+  ctx.lineWidth = size / 8;
+  ctx.textAlign = 'center';
+  const x = canvas.width / 2;
+  const yMap = { top: size + 20, center: canvas.height/2, bottom: canvas.height - 30 };
+  const y = yMap[pos];
+  ctx.strokeText(text, x, y);
+  ctx.fillText(text, x, y);
+}
+
+function resizePhoto() {
+  const val = document.getElementById('photo-resize').value;
+  if (!val || !photoImg) return;
+  const [w, h] = val.split(',').map(Number);
+  const canvas = document.getElementById('photo-canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  const b = document.getElementById('adj-brightness').value;
+  const c = document.getElementById('adj-contrast').value;
+  const s = document.getElementById('adj-saturation').value;
+  let filterStr = `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
+  if (currentFilter !== 'none') filterStr += ' ' + currentFilter;
+  ctx.filter = filterStr;
+  // fit image into new size keeping aspect ratio
+  const scale = Math.min(w/photoImg.width, h/photoImg.height);
+  const nw = photoImg.width * scale, nh = photoImg.height * scale;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,w,h);
+  ctx.drawImage(photoImg, (w-nw)/2, (h-nh)/2, nw, nh);
+}
+
+function rotatePhoto(deg) {
+  photoRotation = (photoRotation + deg) % 360;
+  renderPhoto();
+}
+
+function downloadPhoto() {
+  const canvas = document.getElementById('photo-canvas');
+  const link = document.createElement('a');
+  link.download = 'edited-photo.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function resetPhotoEditor() {
+  photoImg = null;
+  document.getElementById('photo-upload-area').classList.remove('hidden');
+  document.getElementById('photo-editor').classList.add('hidden');
+  document.getElementById('photo-file').value = '';
+}
 </script>
 </body>
 </html>
