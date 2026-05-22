@@ -901,16 +901,17 @@
       <div>
         <h3 class="font-bold text-gray-700 mb-4 text-lg">AI Video Creation & Editing</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <a href="https://www.capcut.com" target="_blank" class="tool-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 card-hover flex items-start gap-4 no-underline">
+          <div onclick="scrollToBuiltinEditor()" class="tool-card bg-white rounded-2xl p-5 shadow-sm border-2 border-indigo-200 card-hover flex items-start gap-4 cursor-pointer relative overflow-hidden">
+            <div class="absolute top-2 right-2 bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">USE THIS</div>
             <div class="tool-icon w-12 h-12 bg-gradient-to-br from-black to-gray-700 rounded-xl flex items-center justify-center flex-shrink-0">
               <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.868v6.264a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
             </div>
             <div>
-              <h4 class="font-bold text-gray-800">CapCut</h4>
-              <p class="text-gray-500 text-sm mt-0.5">Free AI video editor. Auto-captions, templates, effects, text-to-video. Perfect for TikTok & Reels.</p>
-              <span class="mt-2 inline-block bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">FREE</span>
+              <h4 class="font-bold text-gray-800">CapCut-style Editor</h4>
+              <p class="text-gray-500 text-sm mt-0.5">Built right inside this app — trim, captions, resize, GIF, speed change. Works in India. No login needed.</p>
+              <span class="mt-2 inline-block bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">FREE — Built-in ↑</span>
             </div>
-          </a>
+          </div>
           <a href="https://runwayml.com" target="_blank" class="tool-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 card-hover flex items-start gap-4 no-underline">
             <div class="tool-icon w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0">
               <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
@@ -1618,6 +1619,20 @@ function resetPhotoEditor() {
   document.getElementById('photo-upload-area').classList.remove('hidden');
   document.getElementById('photo-editor').classList.add('hidden');
   document.getElementById('photo-file').value = '';
+}
+
+function scrollToBuiltinEditor() {
+  showTab('media');
+  setTimeout(() => {
+    const el = document.getElementById('vid-upload-area') || document.getElementById('vid-editor');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // flash highlight
+    const card = el?.closest('.bg-white') || document.querySelector('#tab-media .bg-white');
+    if (card) {
+      card.style.boxShadow = '0 0 0 3px #6366f1';
+      setTimeout(() => card.style.boxShadow = '', 1500);
+    }
+  }, 100);
 }
 </script>
 </body>

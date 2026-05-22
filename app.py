@@ -300,6 +300,15 @@ def quick_strategy():
 Give specific, actionable advice. Use bullet points and clear structure."""
     return ai_route(system, data.get("question", ""))
 
+@app.errorhandler(404)
+def not_found(e):
+    user = current_user()
+    return render_template("404.html", user=user), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    return render_template("404.html", user=current_user(), error=500), 500
+
 if __name__ == "__main__":
     print("\n🚀 AI Marketing Platform starting...")
     print("📍 http://localhost:5050\n")
