@@ -1,0 +1,7 @@
+flask
+flask-sqlalchemy
+flask-bcrypt
+groq
+razorpay
+gunicorn
+psycopg2-binary

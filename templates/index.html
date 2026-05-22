@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Marketing Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  * { font-family: 'Inter', sans-serif; }
+  .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+  .card-hover { transition: all 0.3s ease; }
+  .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+  .tab-active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+  .loading { display: none; }
+  .loading.show { display: flex; }
+  .result-box { display: none; }
+  .result-box.show { display: block; }
+  #api-modal { display: none; }
+  #api-modal.show { display: flex; }
+  .prose h1,.prose h2,.prose h3 { font-weight:700; margin:1rem 0 0.5rem; }
+  .prose h2 { font-size:1.2rem; color:#4f46e5; }
+  .prose h3 { font-size:1rem; color:#7c3aed; }
+  .prose ul,.prose ol { padding-left:1.5rem; margin:0.5rem 0; }
+  .prose li { margin:0.25rem 0; }
+  .prose p { margin:0.5rem 0; line-height:1.7; }
+  .prose table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.9rem; }
+  .prose th { background:#667eea; color:white; padding:0.5rem 0.75rem; text-align:left; }
+  .prose td { padding:0.5rem 0.75rem; border-bottom:1px solid #e5e7eb; }
+  .prose tr:nth-child(even) td { background:#f8f9ff; }
+  .prose strong { color:#1f2937; font-weight:600; }
+  .prose code { background:#f3f4f6; padding:0.1rem 0.3rem; border-radius:4px; font-size:0.85rem; }
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-track { background:#f1f1f1; }
+  ::-webkit-scrollbar-thumb { background:#667eea; border-radius:3px; }
+  .pulse-dot { animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .spin { animation: spin 1s linear infinite; }
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  .tool-card:hover .tool-icon { transform: scale(1.1); transition: transform 0.3s; }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- Groq Key Modal (only shown if user hasn't saved a key yet) -->
+<div id="api-modal" class="{{ 'show' if needs_key else '' }} fixed inset-0 bg-black bg-opacity-60 z-50 items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+    <div class="text-center mb-6">
+      <div class="w-16 h-16 gradient-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+        </svg>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-800">One Last Step</h2>
+      <p class="text-gray-500 mt-2 text-sm">Add your free Groq API key to power the AI. Get one free (no credit card) at <a href="https://console.groq.com" target="_blank" class="text-indigo-600 font-medium hover:underline">console.groq.com</a></p>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Groq API Key <span class="text-green-600 font-semibold">(100% Free)</span></label>
+        <input type="password" id="api-key-input" placeholder="gsk_..." class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors text-sm font-mono"/>
+      </div>
+      <button onclick="saveApiKey()" class="w-full py-3 gradient-bg text-white rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+        <span id="key-btn-text">Save & Start</span>
+        <svg id="key-spinner" class="w-5 h-5 spin hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+      </button>
+      <p id="key-error" class="text-red-500 text-sm text-center hidden"></p>
+      <p class="text-xs text-gray-400 text-center">Stored securely on your account. Never shared.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Upgrade Modal -->
+<div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 items-center justify-center p-4" style="display:none">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
+    <div class="w-16 h-16 bg-yellow-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    </div>
+    <h2 class="text-2xl font-bold text-gray-800">Daily Limit Reached</h2>
+    <p class="text-gray-500 mt-2 text-sm">You've used all <strong>{{ free_limit }} free generations</strong> for today. Upgrade to Pro for unlimited access.</p>
+    <div class="mt-6 space-y-3">
+      <a href="/pricing" class="block w-full py-3 gradient-bg text-white rounded-xl font-bold hover:opacity-90 transition-opacity">Upgrade to Pro — ₹{{ pro_price }}/mo</a>
+      <button onclick="document.getElementById('upgrade-modal').style.display='none'" class="block w-full py-3 bg-gray-100 text-gray-600 rounded-xl font-medium text-sm">Maybe tomorrow</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<div class="flex h-screen overflow-hidden">
+  <aside class="w-64 gradient-bg text-white flex flex-col flex-shrink-0 overflow-y-auto">
+    <div class="p-6 border-b border-white border-opacity-20">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-none">AI Marketing</h1>
+          <p class="text-xs text-purple-200">Hub</p>
+        </div>
+      </div>
+    </div>
+    <nav class="flex-1 p-4 space-y-1">
+      <button onclick="showTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-sm bg-white bg-opacity-20">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+        Dashboard
+      </button>
+      <button onclick="showTab('content')" id="nav-content" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-sm hover:bg-white hover:bg-opacity-10 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        Content Generator
+      </button>
+      <button onclick="showTab('campaign')" id="nav-campaign" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-sm hover:bg-white hover:bg-opacity-10 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Campaign Planner
+      </button>
+      <button onclick="showTab('seo')" id="nav-seo" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-sm hover:bg-white hover:bg-opacity-10 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        SEO Research
+      </button>
+      <button onclick="showTab('media')" id="nav-media" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-sm hover:bg-white hover:bg-opacity-10 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.868v6.264a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+        Photo & Video AI
+      </button>
+      <button onclick="showTab('report')" id="nav-report" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-sm hover:bg-white hover:bg-opacity-10 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Client Reports
+      </button>
+      <button onclick="showTab('advisor')" id="nav-advisor" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-sm hover:bg-white hover:bg-opacity-10 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        AI Advisor
+      </button>
+    </nav>
+    <div class="p-4 border-t border-white border-opacity-20 space-y-3">
+      <!-- User info -->
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center text-sm font-bold">
+          {{ user.name[0].upper() }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-semibold text-white truncate">{{ user.name }}</p>
+          <p class="text-xs text-purple-200 truncate">{{ user.email }}</p>
+        </div>
+      </div>
+      <!-- Plan badge -->
+      {% if user.plan == 'pro' %}
+      <div class="flex items-center gap-2 bg-yellow-400 bg-opacity-20 rounded-lg px-3 py-2">
+        <svg class="w-4 h-4 text-yellow-300" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+        <span class="text-xs font-bold text-yellow-300">PRO — Unlimited</span>
+      </div>
+      {% else %}
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs text-purple-200">Free: <span id="usage-count">{{ user.usage_remaining() }}</span>/{{ free_limit }} left today</span>
+          <span class="text-xs text-purple-300">FREE</span>
+        </div>
+        <div class="w-full bg-white bg-opacity-20 rounded-full h-1.5">
+          <div class="bg-green-400 h-1.5 rounded-full transition-all" style="width: {{ ((user.usage_remaining() / free_limit) * 100)|int }}%"></div>
+        </div>
+        <a href="/pricing" class="mt-2 block w-full py-2 bg-yellow-400 text-yellow-900 rounded-lg text-xs font-bold text-center hover:bg-yellow-300 transition-colors">⚡ Upgrade to Pro</a>
+      </div>
+      {% endif %}
+      <!-- Bottom links -->
+      <div class="flex items-center justify-between pt-1">
+        <div class="flex items-center gap-1.5">
+          <div class="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
+          <span class="text-xs text-purple-200">AI Online</span>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="changeKey()" class="text-xs text-purple-300 hover:text-white transition-colors">API Key</button>
+          <a href="/logout" class="text-xs text-purple-300 hover:text-white transition-colors">Logout</a>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto">
+
+    <!-- DASHBOARD TAB -->
+    <div id="tab-dashboard" class="tab-content p-8">
+      <div class="mb-8">
+        <h2 class="text-3xl font-bold text-gray-800">Welcome to Your AI Marketing Hub</h2>
+        <p class="text-gray-500 mt-1">Your full-service AI digital marketing assistant. Everything in one place.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div onclick="showTab('content')" class="bg-white rounded-2xl p-6 shadow-sm card-hover cursor-pointer border border-gray-100">
+          <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          </div>
+          <h3 class="font-bold text-gray-800 text-lg">Content Generator</h3>
+          <p class="text-gray-500 text-sm mt-1">Instagram captions, blog posts, ad copy, emails & more</p>
+          <div class="mt-4 flex gap-2 flex-wrap">
+            <span class="bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded-full">Captions</span>
+            <span class="bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded-full">Blogs</span>
+            <span class="bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded-full">Ads</span>
+            <span class="bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded-full">Emails</span>
+          </div>
+        </div>
+
+        <div onclick="showTab('campaign')" class="bg-white rounded-2xl p-6 shadow-sm card-hover cursor-pointer border border-gray-100">
+          <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          </div>
+          <h3 class="font-bold text-gray-800 text-lg">Campaign Planner</h3>
+          <p class="text-gray-500 text-sm mt-1">Full marketing campaigns with budgets, timelines & KPIs</p>
+          <div class="mt-4 flex gap-2 flex-wrap">
+            <span class="bg-purple-50 text-purple-700 text-xs px-2 py-1 rounded-full">Strategy</span>
+            <span class="bg-purple-50 text-purple-700 text-xs px-2 py-1 rounded-full">Calendar</span>
+            <span class="bg-purple-50 text-purple-700 text-xs px-2 py-1 rounded-full">Budget</span>
+          </div>
+        </div>
+
+        <div onclick="showTab('seo')" class="bg-white rounded-2xl p-6 shadow-sm card-hover cursor-pointer border border-gray-100">
+          <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <h3 class="font-bold text-gray-800 text-lg">SEO Research</h3>
+          <p class="text-gray-500 text-sm mt-1">Keywords, competitor analysis, meta tags & SEO audits</p>
+          <div class="mt-4 flex gap-2 flex-wrap">
+            <span class="bg-green-50 text-green-700 text-xs px-2 py-1 rounded-full">Keywords</span>
+            <span class="bg-green-50 text-green-700 text-xs px-2 py-1 rounded-full">Competitors</span>
+            <span class="bg-green-50 text-green-700 text-xs px-2 py-1 rounded-full">Meta Tags</span>
+          </div>
+        </div>
+
+        <div onclick="showTab('media')" class="bg-white rounded-2xl p-6 shadow-sm card-hover cursor-pointer border border-gray-100">
+          <div class="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </div>
+          <h3 class="font-bold text-gray-800 text-lg">Photo & Video AI</h3>
+          <p class="text-gray-500 text-sm mt-1">AI image generation, video editing tools & creative resources</p>
+          <div class="mt-4 flex gap-2 flex-wrap">
+            <span class="bg-pink-50 text-pink-700 text-xs px-2 py-1 rounded-full">Images</span>
+            <span class="bg-pink-50 text-pink-700 text-xs px-2 py-1 rounded-full">Videos</span>
+            <span class="bg-pink-50 text-pink-700 text-xs px-2 py-1 rounded-full">Design</span>
+          </div>
+        </div>
+
+        <div onclick="showTab('report')" class="bg-white rounded-2xl p-6 shadow-sm card-hover cursor-pointer border border-gray-100">
+          <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
+          <h3 class="font-bold text-gray-800 text-lg">Client Reports</h3>
+          <p class="text-gray-500 text-sm mt-1">Professional performance reports for your clients</p>
+          <div class="mt-4 flex gap-2 flex-wrap">
+            <span class="bg-yellow-50 text-yellow-700 text-xs px-2 py-1 rounded-full">Performance</span>
+            <span class="bg-yellow-50 text-yellow-700 text-xs px-2 py-1 rounded-full">ROI</span>
+            <span class="bg-yellow-50 text-yellow-700 text-xs px-2 py-1 rounded-full">Strategy</span>
+          </div>
+        </div>
+
+        <div onclick="showTab('advisor')" class="bg-white rounded-2xl p-6 shadow-sm card-hover cursor-pointer border border-gray-100">
+          <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+          </div>
+          <h3 class="font-bold text-gray-800 text-lg">AI Advisor</h3>
+          <p class="text-gray-500 text-sm mt-1">Ask anything about digital marketing — instant expert advice</p>
+          <div class="mt-4 flex gap-2 flex-wrap">
+            <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full">Strategy</span>
+            <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full">Ideas</span>
+            <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full">Growth</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick advisor on dashboard -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Quick AI Question
+        </h3>
+        <div class="flex gap-3">
+          <input id="quick-question" type="text" placeholder="Ask anything... e.g. How do I get more Instagram followers for a restaurant?" class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors"/>
+          <button onclick="quickAsk()" class="px-6 py-3 gradient-bg text-white rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity whitespace-nowrap">Ask AI</button>
+        </div>
+        <div id="quick-loading" class="loading mt-4 items-center gap-2 text-indigo-600">
+          <svg class="w-5 h-5 spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span class="text-sm">AI is thinking...</span>
+        </div>
+        <div id="quick-result" class="result-box mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200 prose max-w-none text-sm text-gray-700"></div>
+      </div>
+    </div>
+
+    <!-- CONTENT GENERATOR TAB -->
+    <div id="tab-content" class="tab-content hidden p-8">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Content Generator</h2>
+        <p class="text-gray-500 text-sm mt-1">Generate professional marketing content in seconds</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <h3 class="font-semibold text-gray-800 mb-4">Configure Content</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Content Type</label>
+              <select id="content-type" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors">
+                <option value="caption">Social Media Captions (5 variations)</option>
+                <option value="blog">Full Blog Post</option>
+                <option value="ad_copy">Ad Copy (3 variations)</option>
+                <option value="email">Marketing Email</option>
+                <option value="hashtags">Hashtag Sets</option>
+                <option value="product_desc">Product Descriptions</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Topic / Product / Service</label>
+              <input id="content-topic" type="text" placeholder="e.g. Summer sale on running shoes, 30% off" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors"/>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Platform</label>
+                <select id="content-platform" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors">
+                  <option>Instagram</option>
+                  <option>Facebook</option>
+                  <option>LinkedIn</option>
+                  <option>Twitter/X</option>
+                  <option>TikTok</option>
+                  <option>YouTube</option>
+                  <option>Google Ads</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Tone</label>
+                <select id="content-tone" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors">
+                  <option>Professional</option>
+                  <option>Casual & Fun</option>
+                  <option>Urgent/Sales</option>
+                  <option>Inspirational</option>
+                  <option>Educational</option>
+                  <option>Luxury</option>
+                  <option>Friendly</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Extra Instructions (optional)</label>
+              <input id="content-extra" type="text" placeholder="e.g. Target audience: women 25-35, mention free shipping" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors"/>
+            </div>
+            <button onclick="generateContent()" class="w-full py-3 gradient-bg text-white rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              Generate Content
+            </button>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-800">Generated Content</h3>
+            <button onclick="copyResult('content-result')" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Copy All</button>
+          </div>
+          <div id="content-loading" class="loading items-center gap-2 text-indigo-600 mb-3">
+            <svg class="w-5 h-5 spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span class="text-sm font-medium">Creating your content...</span>
+          </div>
+          <div id="content-result" class="result-box flex-1 p-4 bg-gray-50 rounded-xl border border-gray-200 prose max-w-none text-sm text-gray-700 overflow-y-auto min-h-64"></div>
+          <div id="content-placeholder" class="flex-1 flex items-center justify-center text-gray-300 min-h-64">
+            <div class="text-center">
+              <svg class="w-12 h-12 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              <p class="text-sm">Your generated content will appear here</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAMPAIGN PLANNER TAB -->
+    <div id="tab-campaign" class="tab-content hidden p-8">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Campaign Planner</h2>
+        <p class="text-gray-500 text-sm mt-1">Build a complete marketing campaign with strategy, calendar & budgets</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Business Name & Type</label>
+              <input id="camp-business" type="text" placeholder="e.g. FreshBites — healthy meal delivery service" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors"/>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Campaign Goal</label>
+              <select id="camp-goal" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors">
+                <option>Increase brand awareness</option>
+                <option>Drive website traffic</option>
+                <option>Generate leads / sign-ups</option>
+                <option>Boost sales / conversions</option>
+                <option>Grow social media followers</option>
+                <option>Launch a new product</option>
+                <option>Promote a seasonal sale</option>
+                <option>Build email list</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Budget</label>
+                <input id="camp-budget" type="text" placeholder="e.g. $500/month" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors"/>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                <select id="camp-duration" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors">
+                  <option>2 weeks</option>
+                  <option>30 days</option>
+                  <option>60 days</option>
+                  <option>90 days</option>
+                  <option>6 months</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Platforms</label>
+              <div class="flex flex-wrap gap-2" id="platform-checkboxes">
+                <label class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 cursor-pointer hover:border-indigo-400 transition-colors text-sm">
+                  <input type="checkbox" value="Instagram" checked class="platform-cb accent-indigo-600"> Instagram
+                </label>
+                <label class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 cursor-pointer hover:border-indigo-400 transition-colors text-sm">
+                  <input type="checkbox" value="Facebook" class="platform-cb accent-indigo-600"> Facebook
+                </label>
+                <label class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 cursor-pointer hover:border-indigo-400 transition-colors text-sm">
+                  <input type="checkbox" value="TikTok" class="platform-cb accent-indigo-600"> TikTok
+                </label>
+                <label class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 cursor-pointer hover:border-indigo-400 transition-colors text-sm">
+                  <input type="checkbox" value="Google Ads" class="platform-cb accent-indigo-600"> Google Ads
+                </label>
+                <label class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 cursor-pointer hover:border-indigo-400 transition-colors text-sm">
+                  <input type="checkbox" value="LinkedIn" class="platform-cb accent-indigo-600"> LinkedIn
+                </label>
+                <label class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 cursor-pointer hover:border-indigo-400 transition-colors text-sm">
+                  <input type="checkbox" value="Email" class="platform-cb accent-indigo-600"> Email
+                </label>
+                <label class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 cursor-pointer hover:border-indigo-400 transition-colors text-sm">
+                  <input type="checkbox" value="YouTube" class="platform-cb accent-indigo-600"> YouTube
+                </label>
+              </div>
+            </div>
+            <button onclick="planCampaign()" class="w-full py-3 gradient-bg text-white rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              Build My Campaign Plan
+            </button>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-800">Your Campaign Plan</h3>
+            <button onclick="copyResult('campaign-result')" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Copy</button>
+          </div>
+          <div id="campaign-loading" class="loading items-center gap-2 text-indigo-600 mb-3">
+            <svg class="w-5 h-5 spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span class="text-sm font-medium">Building your campaign...</span>
+          </div>
+          <div id="campaign-result" class="result-box flex-1 p-4 bg-gray-50 rounded-xl border border-gray-200 prose max-w-none text-sm text-gray-700 overflow-y-auto min-h-64"></div>
+          <div id="campaign-placeholder" class="flex-1 flex items-center justify-center text-gray-300 min-h-64">
+            <div class="text-center">
+              <svg class="w-12 h-12 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+              <p class="text-sm">Your campaign plan will appear here</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEO TAB -->
+    <div id="tab-seo" class="tab-content hidden p-8">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">SEO Research</h2>
+        <p class="text-gray-500 text-sm mt-1">Keywords, competitor analysis, meta tags & full audits</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">SEO Task</label>
+              <select id="seo-task" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors">
+                <option value="keywords">Keyword Research (30 keywords)</option>
+                <option value="competitor">Competitor Analysis</option>
+                <option value="meta">Meta Titles & Descriptions</option>
+                <option value="audit">SEO Audit Checklist</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Topic / Niche</label>
+              <input id="seo-topic" type="text" placeholder="e.g. organic skincare products" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors"/>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Industry</label>
+              <input id="seo-industry" type="text" placeholder="e.g. beauty & wellness" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors"/>
+            </div>
+            <button onclick="doSEO()" class="w-full py-3 gradient-bg text-white rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              Run SEO Research
+            </button>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-800">SEO Results</h3>
+            <button onclick="copyResult('seo-result')" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Copy</button>
+          </div>
+          <div id="seo-loading" class="loading items-center gap-2 text-indigo-600 mb-3">
+            <svg class="w-5 h-5 spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span class="text-sm font-medium">Researching...</span>
+          </div>
+          <div id="seo-result" class="result-box flex-1 p-4 bg-gray-50 rounded-xl border border-gray-200 prose max-w-none text-sm text-gray-700 overflow-y-auto min-h-64"></div>
+          <div id="seo-placeholder" class="flex-1 flex items-center justify-center text-gray-300 min-h-64">
+            <div class="text-center">
+              <svg class="w-12 h-12 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <p class="text-sm">SEO results will appear here</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEDIA TOOLS TAB -->
+    <div id="tab-media" class="tab-content hidden p-8">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Photo & Video AI Tools</h2>
+        <p class="text-gray-500 text-sm mt-1">The best AI tools for creating stunning visuals and videos</p>
+      </div>
+
+      <div class="mb-8">
+        <h3 class="font-bold text-gray-700 mb-4 text-lg">AI Image Generation & Editing</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <a href="https://www.canva.com" target="_blank" class="tool-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 card-hover flex items-start gap-4 no-underline">
+            <div class="tool-icon w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-800">Canva AI</h4>
+              <p class="text-gray-500 text-sm mt-0.5">Design graphics, remove backgrounds, generate AI images. Free plan available.</p>
+              <span class="mt-2 inline-block bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">FREE to start</span>
+            </div>
+          </a>
+          <a href="https://clipdrop.co" target="_blank" class="tool-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 card-hover flex items-start gap-4 no-underline">
+            <div class="tool-icon w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-800">Clipdrop</h4>
+              <p class="text-gray-500 text-sm mt-0.5">Remove backgrounds, upscale images, uncrop photos with AI. By Stability AI.</p>
+              <span class="mt-2 inline-block bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">FREE plan</span>
+            </div>
+          </a>
+          <a href="https://www.adobe.com/products/firefly.html" target="_blank" class="tool-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 card-hover flex items-start gap-4 no-underline">
+            <div class="tool-icon w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-800">Adobe Firefly</h4>
+              <p class="text-gray-500 text-sm mt-0.5">Generate & edit images with AI. Generative fill, text effects, style match.</p>
+              <span class="mt-2 inline-block bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">Free trial</span>
+            </div>
+          </a>
+          <a href="https://www.midjourney.com" target="_blank" class="tool-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 card-hover flex items-start gap-4 no-underline">
+            <div class="tool-icon w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-800">Midjourney</h4>
+              <p class="text-gray-500 text-sm mt-0.5">World's best AI image generator. Perfect for product photos & marketing visuals.</p>
+              <span class="mt-2 inline-block bg-yellow-100 text-yellow-700 text-xs px-2 py-0.5 rounded-full font-medium">From $10/mo</span>
+            </div>
+          </a>
+          <a href="https://leonardo.ai" target="_blank" class="tool-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 card-hover flex items-start gap-4 no-underline">
+            <div class="tool-icon w-12 h-12 bg-gradient-to-br from-teal-500 to-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-800">Leonardo AI</h4>
+              <p class="text-gray-500 text-sm mt-0.5">High quality AI images. Great free tier with 150 free credits daily.</p>
+              <span class="mt-2 inline-block bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">FREE (150/day)</span>
+            </div>
+          </a>
+          <a href="https://www.remove.bg" target="_blank" class="tool-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 card-hover flex items-start gap-4 no-underline">
+            <div class="tool-icon w-12 h-12 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-800">Remove.bg</h4>
+              <p class="text-gray-500 text-sm mt-0.5">Instantly remove photo backgrounds in one click. Free for low-res images.</p>
+              <span class="mt-2 inline-block bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">FREE (low-res)</span>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="font-bold text-gray-700 mb-4 text-lg">AI Video Creation & Editing</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <a href="https://www.capcut.com" target="_blank" class="tool-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 card-hover flex items-start gap-4 no-underline">
+            <div class="tool-icon w-12 h-12 bg-gradient-to-br from-black to-gray-700 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.868v6.264a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-800">CapCut</h4>
+              <p class="text-gray-500 text-sm mt-0.5">Free AI video editor. Auto-captions, templates, effects, text-to-video. Perfect for TikTok & Reels.</p>
+              <span class="mt-2 inline-block bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">FREE</span>
+            </div>
+          </a>
+          <a href="https://runwayml.com" target="_blank" class="tool-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 card-hover flex items-start gap-4 no-underline">
+            <div class="tool-icon w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-800">Runway ML</h4>
+              <p class="text-gray-500 text-sm mt-0.5">AI video generation, text-to-video, video editing. Industry standard for pro video AI.</p>
+              <span class="mt-2 inline-block bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">Free trial</span>
+            </div>
+          </a>
+          <a href="https://www.heygen.com" target="_blank" class="tool-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 card-hover flex items-start gap-4 no-underline">
+            <div class="tool-icon w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-800">HeyGen</h4>
+              <p class="text-gray-500 text-sm mt-0.5">Create AI avatar videos. Type a script, get a professional talking-head video instantly.</p>
+              <span class="mt-2 inline-block bg-yellow-100 text-yellow-700 text-xs px-2 py-0.5 rounded-full font-medium">Free credits</span>
+            </div>
+          </a>
+          <a href="https://pictory.ai" target="_blank" class="tool-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 card-hover flex items-start gap-4 no-underline">
+            <div class="tool-icon w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4"/></svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-800">Pictory AI</h4>
+              <p class="text-gray-500 text-sm mt-0.5">Turn blog posts into videos automatically. Great for repurposing content.</p>
+              <span class="mt-2 inline-block bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">Free trial</span>
+            </div>
+          </a>
+          <a href="https://invideo.io" target="_blank" class="tool-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 card-hover flex items-start gap-4 no-underline">
+            <div class="tool-icon w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.868v6.264a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-800">InVideo AI</h4>
+              <p class="text-gray-500 text-sm mt-0.5">Create marketing videos from text prompts. Templates for ads, promos & social media.</p>
+              <span class="mt-2 inline-block bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">Free plan</span>
+            </div>
+          </a>
+          <a href="https://www.descript.com" target="_blank" class="tool-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 card-hover flex items-start gap-4 no-underline">
+            <div class="tool-icon w-12 h-12 bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-800">Descript</h4>
+              <p class="text-gray-500 text-sm mt-0.5">Edit video by editing text transcript. Remove filler words, clone your voice.</p>
+              <span class="mt-2 inline-block bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">Free tier</span>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- AI Script Writer -->
+      <div class="mt-8 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.868v6.264a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          AI Video Script Writer
+        </h3>
+        <p class="text-gray-500 text-sm mb-4">Describe your video and I'll write a complete script ready to record or use with HeyGen/Runway.</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+          <input id="script-topic" type="text" placeholder="Video topic e.g. Product launch" class="px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-pink-500 text-sm transition-colors"/>
+          <select id="script-type" class="px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-pink-500 text-sm transition-colors">
+            <option>30-second ad</option>
+            <option>60-second promo</option>
+            <option>2-minute explainer</option>
+            <option>TikTok/Reels (15s)</option>
+            <option>YouTube intro</option>
+            <option>Testimonial script</option>
+          </select>
+          <button onclick="writeScript()" class="py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity">Write Script</button>
+        </div>
+        <div id="script-loading" class="loading items-center gap-2 text-pink-600 mb-3">
+          <svg class="w-5 h-5 spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span class="text-sm font-medium">Writing your script...</span>
+        </div>
+        <div id="script-result" class="result-box p-4 bg-gray-50 rounded-xl border border-gray-200 prose max-w-none text-sm text-gray-700"></div>
+      </div>
+    </div>
+
+    <!-- REPORTS TAB -->
+    <div id="tab-report" class="tab-content hidden p-8">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Client Report Generator</h2>
+        <p class="text-gray-500 text-sm mt-1">Create professional, polished reports for your clients in seconds</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Client Name</label>
+                <input id="rep-client" type="text" placeholder="e.g. Nike UK" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors"/>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Period</label>
+                <input id="rep-period" type="text" placeholder="e.g. May 2025" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors"/>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Key Metrics Achieved</label>
+              <textarea id="rep-metrics" rows="3" placeholder="e.g. Instagram followers: +1,200 | Website traffic: +45% | 3 viral posts | Email open rate: 38%" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors resize-none"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Campaign Wins This Period</label>
+              <textarea id="rep-wins" rows="2" placeholder="e.g. Summer sale campaign generated 230 leads. Reel hit 50k views." class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors resize-none"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Next Month's Plan</label>
+              <textarea id="rep-next" rows="2" placeholder="e.g. Back-to-school campaign, new TikTok strategy, influencer outreach" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors resize-none"></textarea>
+            </div>
+            <button onclick="generateReport()" class="w-full py-3 gradient-bg text-white rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              Generate Client Report
+            </button>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-800">Generated Report</h3>
+            <button onclick="copyResult('report-result')" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Copy</button>
+          </div>
+          <div id="report-loading" class="loading items-center gap-2 text-indigo-600 mb-3">
+            <svg class="w-5 h-5 spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span class="text-sm font-medium">Writing your report...</span>
+          </div>
+          <div id="report-result" class="result-box flex-1 p-4 bg-gray-50 rounded-xl border border-gray-200 prose max-w-none text-sm text-gray-700 overflow-y-auto min-h-64"></div>
+          <div id="report-placeholder" class="flex-1 flex items-center justify-center text-gray-300 min-h-64">
+            <div class="text-center">
+              <svg class="w-12 h-12 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <p class="text-sm">Your professional report will appear here</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI ADVISOR TAB -->
+    <div id="tab-advisor" class="tab-content hidden p-8">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">AI Marketing Advisor</h2>
+        <p class="text-gray-500 text-sm mt-1">Your personal marketing expert — ask anything, anytime</p>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col" style="height: calc(100vh - 200px)">
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4">
+          <div class="flex gap-3">
+            <div class="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <div class="bg-gray-50 rounded-2xl rounded-tl-none p-4 max-w-2xl">
+              <p class="text-gray-700 text-sm">Hi! I'm your AI marketing advisor. Ask me anything about your digital marketing firm — strategy, content ideas, pricing, client acquisition, social media growth, paid ads, and more. What would you like to know?</p>
+            </div>
+          </div>
+        </div>
+        <div class="p-4 border-t border-gray-100">
+          <div class="flex gap-3">
+            <input id="advisor-input" type="text" placeholder="Ask me anything about marketing..." class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors" onkeypress="if(event.key==='Enter') sendAdvisor()"/>
+            <button onclick="sendAdvisor()" class="px-6 py-3 gradient-bg text-white rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+              Send
+            </button>
+          </div>
+          <div id="advisor-loading" class="loading mt-2 items-center gap-2 text-indigo-600">
+            <svg class="w-4 h-4 spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span class="text-xs">AI is thinking...</span>
+          </div>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button onclick="quickAdvisor('How do I price my digital marketing services?')" class="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full hover:bg-indigo-50 hover:text-indigo-700 transition-colors">How do I price my services?</button>
+            <button onclick="quickAdvisor('What services should a digital marketing agency offer?')" class="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full hover:bg-indigo-50 hover:text-indigo-700 transition-colors">What services should I offer?</button>
+            <button onclick="quickAdvisor('How do I get my first digital marketing clients?')" class="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full hover:bg-indigo-50 hover:text-indigo-700 transition-colors">How to get first clients?</button>
+            <button onclick="quickAdvisor('What are the best social media trends in 2025?')" class="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full hover:bg-indigo-50 hover:text-indigo-700 transition-colors">Top 2025 social media trends</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+async function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) return;
+  document.getElementById('key-btn-text').textContent = 'Saving...';
+  document.getElementById('key-spinner').classList.remove('hidden');
+  document.getElementById('key-error').classList.add('hidden');
+
+  const res = await fetch('/save-groq-key', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({api_key: key})
+  });
+  const data = await res.json();
+  document.getElementById('key-btn-text').textContent = 'Save & Start';
+  document.getElementById('key-spinner').classList.add('hidden');
+
+  if (data.ok) {
+    document.getElementById('api-modal').style.display = 'none';
+    window.location.reload();
+  } else {
+    document.getElementById('key-error').textContent = 'Invalid key: ' + data.error;
+    document.getElementById('key-error').classList.remove('hidden');
+  }
+}
+
+function changeKey() {
+  document.getElementById('api-modal').classList.add('show');
+}
+
+function handleLimitOrError(data) {
+  if (data.error === 'limit_reached') {
+    document.getElementById('upgrade-modal').style.display = 'flex';
+    return true;
+  }
+  return false;
+}
+
+function updateUsage(data) {
+  if (data.plan === 'free' && data.usage !== undefined) {
+    const el = document.getElementById('usage-count');
+    if (el) el.textContent = data.usage;
+  }
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('bg-white','bg-opacity-20'));
+  document.getElementById('tab-' + name).classList.remove('hidden');
+  document.getElementById('nav-' + name).classList.add('bg-white','bg-opacity-20');
+}
+
+function showLoading(id, show) {
+  const el = document.getElementById(id);
+  if (show) el.classList.add('show'); else el.classList.remove('show');
+}
+
+function showResult(id, html) {
+  const el = document.getElementById(id);
+  el.innerHTML = html;
+  el.classList.add('show');
+  const ph = document.getElementById(id.replace('-result','-placeholder'));
+  if (ph) ph.style.display = 'none';
+}
+
+function renderMD(text) {
+  return marked.parse(text);
+}
+
+async function quickAsk() {
+  const q = document.getElementById('quick-question').value.trim();
+  if (!q) return;
+  showLoading('quick-loading', true);
+  document.getElementById('quick-result').classList.remove('show');
+  const res = await fetch('/api/strategy', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({question: q})});
+  const data = await res.json();
+  showLoading('quick-loading', false);
+  if (data.ok) { updateUsage(data); showResult('quick-result', renderMD(data.result)); }
+  else if (!handleLimitOrError(data)) showResult('quick-result', '<p class="text-red-500">Error: ' + data.error + '</p>');
+}
+
+async function generateContent() {
+  const topic = document.getElementById('content-topic').value.trim();
+  if (!topic) { alert('Please enter a topic'); return; }
+  showLoading('content-loading', true);
+  document.getElementById('content-result').classList.remove('show');
+  document.getElementById('content-placeholder').style.display = '';
+  const res = await fetch('/api/content', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+    type: document.getElementById('content-type').value, topic,
+    platform: document.getElementById('content-platform').value,
+    tone: document.getElementById('content-tone').value,
+    extra: document.getElementById('content-extra').value
+  })});
+  const data = await res.json();
+  showLoading('content-loading', false);
+  if (data.ok) { updateUsage(data); showResult('content-result', renderMD(data.result)); }
+  else if (!handleLimitOrError(data)) showResult('content-result', '<p class="text-red-500">Error: ' + data.error + '</p>');
+}
+
+async function planCampaign() {
+  const business = document.getElementById('camp-business').value.trim();
+  if (!business) { alert('Please enter your business name'); return; }
+  showLoading('campaign-loading', true);
+  document.getElementById('campaign-result').classList.remove('show');
+  document.getElementById('campaign-placeholder').style.display = '';
+  const platforms = [...document.querySelectorAll('.platform-cb:checked')].map(c=>c.value).join(', ');
+  const res = await fetch('/api/campaign', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+    business, platforms,
+    goal: document.getElementById('camp-goal').value,
+    budget: document.getElementById('camp-budget').value,
+    duration: document.getElementById('camp-duration').value,
+  })});
+  const data = await res.json();
+  showLoading('campaign-loading', false);
+  if (data.ok) { updateUsage(data); showResult('campaign-result', renderMD(data.result)); }
+  else if (!handleLimitOrError(data)) showResult('campaign-result', '<p class="text-red-500">Error: ' + data.error + '</p>');
+}
+
+async function doSEO() {
+  const topic = document.getElementById('seo-topic').value.trim();
+  if (!topic) { alert('Please enter a topic'); return; }
+  showLoading('seo-loading', true);
+  document.getElementById('seo-result').classList.remove('show');
+  document.getElementById('seo-placeholder').style.display = '';
+  const res = await fetch('/api/seo', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+    topic, industry: document.getElementById('seo-industry').value,
+    task_type: document.getElementById('seo-task').value
+  })});
+  const data = await res.json();
+  showLoading('seo-loading', false);
+  if (data.ok) { updateUsage(data); showResult('seo-result', renderMD(data.result)); }
+  else if (!handleLimitOrError(data)) showResult('seo-result', '<p class="text-red-500">Error: ' + data.error + '</p>');
+}
+
+async function generateReport() {
+  const client = document.getElementById('rep-client').value.trim();
+  if (!client) { alert('Please enter client name'); return; }
+  showLoading('report-loading', true);
+  document.getElementById('report-result').classList.remove('show');
+  document.getElementById('report-placeholder').style.display = '';
+  const res = await fetch('/api/report', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+    client_name: client,
+    period: document.getElementById('rep-period').value,
+    metrics: document.getElementById('rep-metrics').value,
+    wins: document.getElementById('rep-wins').value,
+    next_steps: document.getElementById('rep-next').value
+  })});
+  const data = await res.json();
+  showLoading('report-loading', false);
+  if (data.ok) { updateUsage(data); showResult('report-result', renderMD(data.result)); }
+  else if (!handleLimitOrError(data)) showResult('report-result', '<p class="text-red-500">Error: ' + data.error + '</p>');
+}
+
+async function writeScript() {
+  const topic = document.getElementById('script-topic').value.trim();
+  if (!topic) { alert('Please enter a video topic'); return; }
+  const type = document.getElementById('script-type').value;
+  showLoading('script-loading', true);
+  document.getElementById('script-result').classList.remove('show');
+  const res = await fetch('/api/strategy', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({question: `Write a complete video script for a ${type} about: ${topic}. Include: hook opening, main points, call-to-action. Format with scene notes and speaking cues.`})});
+  const data = await res.json();
+  showLoading('script-loading', false);
+  if (data.ok) { updateUsage(data); showResult('script-result', renderMD(data.result)); }
+  else if (!handleLimitOrError(data)) showResult('script-result', '<p class="text-red-500">Error: ' + data.error + '</p>');
+}
+
+async function sendAdvisor() {
+  const input = document.getElementById('advisor-input');
+  const q = input.value.trim();
+  if (!q) return;
+  addChatMessage(q, 'user');
+  input.value = '';
+  showLoading('advisor-loading', true);
+  const res = await fetch('/api/strategy', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({question: q})});
+  const data = await res.json();
+  showLoading('advisor-loading', false);
+  if (data.ok) { updateUsage(data); addChatMessage(data.result, 'ai'); }
+  else if (!handleLimitOrError(data)) addChatMessage('Sorry, error: ' + data.error, 'ai');
+}
+
+function quickAdvisor(q) {
+  document.getElementById('advisor-input').value = q;
+  sendAdvisor();
+}
+
+function addChatMessage(text, role) {
+  const chat = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'flex gap-3' + (role === 'user' ? ' justify-end' : '');
+  if (role === 'ai') {
+    div.innerHTML = `<div class="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"><svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div><div class="bg-gray-50 rounded-2xl rounded-tl-none p-4 max-w-2xl prose text-sm text-gray-700">${renderMD(text)}</div>`;
+  } else {
+    div.innerHTML = `<div class="bg-indigo-600 text-white rounded-2xl rounded-tr-none p-4 max-w-2xl text-sm">${text}</div>`;
+  }
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function copyResult(id) {
+  const el = document.getElementById(id);
+  const text = el.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+
+document.getElementById('api-key-input').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') saveApiKey();
+});
+</script>
+</body>
+</html>

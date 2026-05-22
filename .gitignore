@@ -1,0 +1,7 @@
+*.db
+__pycache__/
+*.pyc
+.env
+static/uploads/
+*.egg-info/
+.DS_Store
