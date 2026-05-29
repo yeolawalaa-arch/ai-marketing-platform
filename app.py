@@ -89,11 +89,9 @@ def clean_phone(phone):
     return p
 
 def send_otp_email(email, otp):
-    api_key = os.environ.get("RESEND_API_KEY", "")
-    if not api_key:
-        return False, "Email service not configured. Please contact admin."
-    try:
-        body = f"""<div style="font-family:Arial;max-width:480px;margin:0 auto;padding:30px;background:#f9f9f9;border-radius:12px">
+    gmail_user = os.environ.get("GMAIL_USER", "")
+    gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "")
+    body_html = f"""<div style="font-family:Arial;max-width:480px;margin:0 auto;padding:30px;background:#f9f9f9;border-radius:12px">
 <h2 style="color:#667eea;margin:0 0 16px">AI Marketing Hub</h2>
 <p style="color:#555;margin:0 0 20px">Your OTP code:</p>
 <div style="background:#fff;border:2px solid #667eea;border-radius:10px;padding:20px;text-align:center;margin:0 0 20px">
@@ -101,17 +99,37 @@ def send_otp_email(email, otp):
 </div>
 <p style="color:#888;font-size:13px">This OTP expires in 10 minutes. Do not share it with anyone.</p>
 </div>"""
+    # Try Gmail SMTP first
+    if gmail_user and gmail_pass:
+        try:
+            msg = MIMEText(body_html, "html")
+            msg["Subject"] = f"Your OTP: {otp} — AI Marketing Hub"
+            msg["From"] = f"AI Marketing Hub <{gmail_user}>"
+            msg["To"] = email
+            with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                server.starttls()
+                server.login(gmail_user, gmail_pass)
+                server.sendmail(gmail_user, email, msg.as_string())
+            print(f"✅ Email sent via Gmail to {email}")
+            return True, None
+        except Exception as e:
+            print(f"⚠️ Gmail failed: {e}, trying Resend...")
+    # Fallback to Resend
+    api_key = os.environ.get("RESEND_API_KEY", "")
+    if not api_key:
+        return False, "Email service not configured. Please contact admin."
+    try:
         resp = http_req.post(
             "https://api.resend.com/emails",
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json={"from": "AI Marketing Hub <onboarding@resend.dev>",
                   "to": [email],
                   "subject": f"Your OTP: {otp} — AI Marketing Hub",
-                  "html": body},
+                  "html": body_html},
             timeout=15
         )
         if resp.status_code in (200, 201):
-            print(f"✅ Email sent to {email}")
+            print(f"✅ Email sent via Resend to {email}")
             return True, None
         print(f"❌ Resend error: {resp.text}")
         return False, f"Email failed: {resp.text}"
