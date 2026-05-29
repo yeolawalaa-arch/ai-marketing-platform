@@ -1,0 +1,16 @@
+name: Keep Alive - Ping Render
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # every 5 minutes
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping AI Marketing Hub
+        run: |
+          curl -s -o /dev/null -w "Status: %{http_code} | Time: %{time_total}s\n" \
+            https://ai-marketing-hub.onrender.com/
+          echo "Site pinged at $(date)"
