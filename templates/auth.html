@@ -3,113 +3,317 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>{% if mode == 'login' %}Login{% else %}Sign Up{% endif %} — AI Marketing Hub</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<title>AI Marketing Hub — Login</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-  * { font-family: 'Inter', sans-serif; }
-  .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-  .spin { animation: spin 1s linear infinite; }
-  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{min-height:100vh;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;padding:16px}
+.wrap{width:100%;max-width:420px}
+.logo{text-align:center;margin-bottom:28px}
+.logo-icon{width:60px;height:60px;background:rgba(255,255,255,0.2);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.logo h1{color:#fff;font-size:24px;font-weight:800}
+.logo p{color:rgba(255,255,255,0.8);font-size:14px;margin-top:4px}
+.card{background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.15);padding:32px}
+.screen{display:none}.screen.active{display:block}
+h2{font-size:22px;font-weight:800;color:#1a1a2e;margin-bottom:4px}
+.sub{font-size:13px;color:#888;margin-bottom:20px}
+.sub a{color:#667eea;font-weight:600;text-decoration:none}
+.sub a:hover{text-decoration:underline}
+label{display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:6px}
+.label-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.label-row label{margin:0}
+.link-btn{background:none;border:none;color:#667eea;font-size:12px;cursor:pointer;padding:0}
+.link-btn:hover{text-decoration:underline}
+input[type=text],input[type=email],input[type=password],input[type=tel]{width:100%;padding:13px 16px;border:2px solid #e8e8e8;border-radius:12px;font-size:14px;outline:none;transition:border-color 0.2s;background:#fafafa}
+input:focus{border-color:#667eea;background:#fff}
+.phone-row{display:flex;gap:8px}
+.phone-prefix{padding:13px 14px;border:2px solid #e8e8e8;border-radius:12px;background:#f0f0f0;font-size:14px;color:#555;white-space:nowrap}
+.field{margin-bottom:16px}
+.btn{width:100%;padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s}
+.btn:hover{opacity:0.9}
+.btn-outline{background:#fff;color:#555;border:2px solid #e8e8e8;border-radius:12px;padding:13px;font-size:14px;font-weight:600;width:100%;cursor:pointer;transition:all 0.2s}
+.btn-outline:hover{border-color:#667eea;color:#667eea}
+.divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:#bbb;font-size:13px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#eee}
+.err{color:#e53935;font-size:13px;text-align:center;margin-top:10px;display:none;padding:8px;background:#fff5f5;border-radius:8px}
+.info-box{background:#f5f3ff;border-radius:10px;padding:14px;margin-top:16px;text-align:center;font-size:12px;color:#666}
+.info-box strong{color:#444}
+.back-btn{background:none;border:none;color:#aaa;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;margin-bottom:16px;padding:0}
+.back-btn:hover{color:#667eea}
+.otp-row{display:flex;gap:8px;justify-content:center;margin:20px 0}
+.otp-box{width:46px;height:54px;text-align:center;font-size:22px;font-weight:800;border:2px solid #e8e8e8;border-radius:12px;outline:none;background:#fafafa;transition:border-color 0.2s}
+.otp-box:focus{border-color:#667eea;background:#fff}
+.otp-hint{text-align:center;font-size:13px;color:#888;margin-bottom:4px}
+.resend-row{text-align:center;font-size:13px;color:#aaa;margin-top:12px}
+.spin{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden-spin{display:none}
 </style>
 </head>
-<body class="min-h-screen gradient-bg flex items-center justify-center p-4">
-<div class="w-full max-w-md">
-  <!-- Logo -->
-  <div class="text-center mb-8">
-    <div class="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-      <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-      </svg>
+<body>
+<div class="wrap">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="28" height="28" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
     </div>
-    <h1 class="text-3xl font-bold text-white">AI Marketing Hub</h1>
-    <p class="text-purple-200 mt-1">Your all-in-one AI marketing platform</p>
+    <h1>AI Marketing Hub</h1>
+    <p>Your all-in-one AI marketing platform</p>
   </div>
 
-  <!-- Card -->
-  <div class="bg-white rounded-2xl shadow-2xl p-8">
-    <h2 class="text-2xl font-bold text-gray-800 mb-1">
-      {% if mode == 'login' %}Welcome back{% else %}Create your account{% endif %}
-    </h2>
-    <p class="text-gray-500 text-sm mb-6">
-      {% if mode == 'login' %}
-        Don't have an account? <a href="/register" class="text-indigo-600 font-medium hover:underline">Sign up free</a>
-      {% else %}
-        Already have an account? <a href="/login" class="text-indigo-600 font-medium hover:underline">Login</a>
-      {% endif %}
-    </p>
+  <div class="card">
 
-    <div class="space-y-4">
-      {% if mode == 'register' %}
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
-        <input type="text" id="name" placeholder="e.g. Rahul Sharma" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors"/>
+    <!-- LOGIN -->
+    <div id="s-login" class="screen {{ 'active' if mode == 'login' else '' }}">
+      <h2>Welcome back 👋</h2>
+      <p class="sub">Don't have an account? <a href="/register">Sign up free</a></p>
+      <div class="field">
+        <label>Email Address</label>
+        <input type="email" id="login-email" placeholder="you@example.com"/>
       </div>
-      {% endif %}
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-        <input type="email" id="email" placeholder="you@example.com" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors"/>
+      <div class="field">
+        <div class="label-row">
+          <label>Password</label>
+          <button class="link-btn" onclick="show('s-forgot')">Forgot password?</button>
+        </div>
+        <input type="password" id="login-password" placeholder="••••••••"/>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-        <input type="password" id="password" placeholder="Min 6 characters" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors"/>
-      </div>
-
-      <button onclick="submit()" class="w-full py-3 gradient-bg text-white rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
-        <span id="btn-text">{% if mode == 'login' %}Login{% else %}Create Free Account{% endif %}</span>
-        <svg id="btn-spin" class="w-5 h-5 spin hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-        </svg>
+      <button class="btn" onclick="doLogin()">
+        <span id="login-txt">Login</span>
+        <span id="login-spin" class="hidden-spin spin"></span>
       </button>
-
-      <p id="error-msg" class="text-red-500 text-sm text-center hidden"></p>
+      <p class="err" id="login-err"></p>
+      <div class="divider">or</div>
+      <button class="btn-outline" onclick="show('s-phone')">📱 Login with Phone Number</button>
     </div>
 
-    {% if mode == 'register' %}
-    <div class="mt-6 pt-6 border-t border-gray-100">
-      <p class="text-xs text-gray-400 text-center">Free plan includes <strong>10 AI generations per day</strong>. Upgrade anytime for unlimited access.</p>
-      <div class="mt-3 flex justify-center gap-4 text-xs text-gray-400">
-        <span>✓ No credit card required</span>
-        <span>✓ Cancel anytime</span>
+    <!-- REGISTER -->
+    <div id="s-register" class="screen {{ 'active' if mode == 'register' else '' }}">
+      <h2>Create your account 🚀</h2>
+      <p class="sub">Already have an account? <a href="/login">Login</a></p>
+      <div class="field">
+        <label>Your Name</label>
+        <input type="text" id="reg-name" placeholder="e.g. Rahul Sharma"/>
       </div>
+      <div class="field">
+        <label>Email Address</label>
+        <input type="email" id="reg-email" placeholder="you@example.com"/>
+      </div>
+      <div class="field">
+        <label>Phone Number <span style="color:#bbb;font-weight:400">(optional — for OTP login)</span></label>
+        <div class="phone-row">
+          <span class="phone-prefix">🇮🇳 +91</span>
+          <input type="tel" id="reg-phone" placeholder="98XXXXXXXX" maxlength="10" style="flex:1"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="reg-password" placeholder="Minimum 6 characters"/>
+      </div>
+      <button class="btn" onclick="doRegister()">
+        <span id="reg-txt">Create Free Account</span>
+        <span id="reg-spin" class="hidden-spin spin"></span>
+      </button>
+      <p class="err" id="reg-err"></p>
+      <div class="info-box">✓ <strong>10 AI generations/day free</strong> &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Cancel anytime</div>
     </div>
-    {% endif %}
+
+    <!-- PHONE LOGIN -->
+    <div id="s-phone" class="screen">
+      <button class="back-btn" onclick="show('s-login')">← Back</button>
+      <h2>Login with Phone 📱</h2>
+      <p class="sub" style="margin-bottom:20px">We'll send an OTP to your registered number</p>
+      <div class="field">
+        <label>Phone Number</label>
+        <div class="phone-row">
+          <span class="phone-prefix">🇮🇳 +91</span>
+          <input type="tel" id="phone-num" placeholder="98XXXXXXXX" maxlength="10" style="flex:1"/>
+        </div>
+      </div>
+      <button class="btn" onclick="sendOTP('login')">
+        <span id="phone-txt">Send OTP</span>
+        <span id="phone-spin" class="hidden-spin spin"></span>
+      </button>
+      <p class="err" id="phone-err"></p>
+    </div>
+
+    <!-- FORGOT PASSWORD -->
+    <div id="s-forgot" class="screen">
+      <button class="back-btn" onclick="show('s-login')">← Back</button>
+      <h2>Reset Password 🔑</h2>
+      <p class="sub" style="margin-bottom:20px">Enter your email or phone — we'll send an OTP</p>
+      <div class="field">
+        <label>Email or Phone Number</label>
+        <input type="text" id="forgot-target" placeholder="Email or 10-digit phone number"/>
+      </div>
+      <button class="btn" onclick="sendOTP('reset')">
+        <span id="forgot-txt">Send OTP</span>
+        <span id="forgot-spin" class="hidden-spin spin"></span>
+      </button>
+      <p class="err" id="forgot-err"></p>
+    </div>
+
+    <!-- OTP VERIFY -->
+    <div id="s-otp" class="screen">
+      <button class="back-btn" onclick="goBackFromOTP()">← Back</button>
+      <h2>Enter OTP ✉️</h2>
+      <p class="otp-hint" id="otp-sent-to" style="margin-top:8px;margin-bottom:4px">OTP sent</p>
+      <div class="otp-row">
+        <input class="otp-box" id="o1" maxlength="1" oninput="otpNext(this,'o2')" onkeydown="otpBack(event,this,'')"/>
+        <input class="otp-box" id="o2" maxlength="1" oninput="otpNext(this,'o3')" onkeydown="otpBack(event,this,'o1')"/>
+        <input class="otp-box" id="o3" maxlength="1" oninput="otpNext(this,'o4')" onkeydown="otpBack(event,this,'o2')"/>
+        <input class="otp-box" id="o4" maxlength="1" oninput="otpNext(this,'o5')" onkeydown="otpBack(event,this,'o3')"/>
+        <input class="otp-box" id="o5" maxlength="1" oninput="otpNext(this,'o6')" onkeydown="otpBack(event,this,'o4')"/>
+        <input class="otp-box" id="o6" maxlength="1" oninput="otpDone()"         onkeydown="otpBack(event,this,'o5')"/>
+      </div>
+      <button class="btn" onclick="verifyOTP()">
+        <span id="otp-txt">Verify OTP</span>
+        <span id="otp-spin" class="hidden-spin spin"></span>
+      </button>
+      <p class="err" id="otp-err"></p>
+      <div class="resend-row">Didn't receive OTP? <button class="link-btn" id="resend-btn" onclick="resendOTP()">Resend</button></div>
+    </div>
+
+    <!-- NEW PASSWORD -->
+    <div id="s-newpass" class="screen">
+      <h2>Set New Password 🔒</h2>
+      <p class="sub" style="margin-bottom:20px">Choose a new password for your account</p>
+      <div class="field">
+        <label>New Password</label>
+        <input type="password" id="new-pass" placeholder="Minimum 6 characters"/>
+      </div>
+      <div class="field">
+        <label>Confirm Password</label>
+        <input type="password" id="confirm-pass" placeholder="Re-enter your password"/>
+      </div>
+      <button class="btn" onclick="doResetPassword()">
+        <span id="newpass-txt">Set Password</span>
+        <span id="newpass-spin" class="hidden-spin spin"></span>
+      </button>
+      <p class="err" id="newpass-err"></p>
+    </div>
+
   </div>
 </div>
 
 <script>
-async function submit() {
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
-  const nameEl = document.getElementById('name');
-  const name = nameEl ? nameEl.value.trim() : '';
+let otpFlow='', otpTarget='', resetToken='';
 
-  document.getElementById('btn-text').textContent = 'Please wait...';
-  document.getElementById('btn-spin').classList.remove('hidden');
-  document.getElementById('error-msg').classList.add('hidden');
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function loading(txtId,spinId,on,label){
+  document.getElementById(txtId).textContent=on?'Please wait...':label;
+  document.getElementById(spinId).style.display=on?'inline-block':'none';
+}
+function showErr(id,msg){const e=document.getElementById(id);e.textContent=msg;e.style.display='block';}
+function hideErr(id){document.getElementById(id).style.display='none';}
 
-  const url = '{{ "/login" if mode == "login" else "/register" }}';
-  const body = nameEl ? {name, email, password} : {email, password};
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(body)
-  });
-  const data = await res.json();
-
-  document.getElementById('btn-text').textContent = '{{ "Login" if mode == "login" else "Create Free Account" }}';
-  document.getElementById('btn-spin').classList.add('hidden');
-
-  if (data.ok) {
-    window.location.href = '/';
-  } else {
-    document.getElementById('error-msg').textContent = data.error;
-    document.getElementById('error-msg').classList.remove('hidden');
-  }
+async function doLogin(){
+  hideErr('login-err');
+  const email=document.getElementById('login-email').value.trim();
+  const password=document.getElementById('login-password').value;
+  if(!email||!password) return showErr('login-err','Please enter your email and password');
+  loading('login-txt','login-spin',true);
+  const r=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+  const d=await r.json();
+  loading('login-txt','login-spin',false,'Login');
+  if(d.ok) window.location.href='/';
+  else showErr('login-err',d.error);
 }
 
-document.addEventListener('keypress', e => { if (e.key === 'Enter') submit(); });
+async function doRegister(){
+  hideErr('reg-err');
+  const name=document.getElementById('reg-name').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
+  const phone=document.getElementById('reg-phone').value.trim();
+  const password=document.getElementById('reg-password').value;
+  if(!name||!email||!password) return showErr('reg-err','Name, email and password are required');
+  loading('reg-txt','reg-spin',true);
+  const r=await fetch('/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,phone,password})});
+  const d=await r.json();
+  loading('reg-txt','reg-spin',false,'Create Free Account');
+  if(d.ok) window.location.href='/';
+  else showErr('reg-err',d.error);
+}
+
+async function sendOTP(flow){
+  otpFlow=flow;
+  let target,txtId,spinId,errId,label;
+  if(flow==='login'){
+    const ph=document.getElementById('phone-num').value.trim();
+    if(!ph||ph.length<10) return showErr('phone-err','Please enter a valid 10-digit phone number');
+    target=ph; txtId='phone-txt'; spinId='phone-spin'; errId='phone-err'; label='Send OTP';
+  } else {
+    target=document.getElementById('forgot-target').value.trim();
+    if(!target) return showErr('forgot-err','Please enter your email or phone number');
+    txtId='forgot-txt'; spinId='forgot-spin'; errId='forgot-err'; label='Send OTP';
+  }
+  otpTarget=target; hideErr(errId);
+  loading(txtId,spinId,true);
+  const r=await fetch('/send-otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target,flow})});
+  const d=await r.json();
+  loading(txtId,spinId,false,label);
+  if(d.ok){
+    const isPhone=/^\d+$/.test(target.replace(/[+\- ]/g,''));
+    document.getElementById('otp-sent-to').textContent='OTP sent to: '+(isPhone?'+91 '+target:target);
+    ['o1','o2','o3','o4','o5','o6'].forEach(id=>document.getElementById(id).value='');
+    show('s-otp'); document.getElementById('o1').focus();
+  } else showErr(errId,d.error);
+}
+
+async function resendOTP(){
+  document.getElementById('resend-btn').textContent='Sending...';
+  const r=await fetch('/send-otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:otpTarget,flow:otpFlow})});
+  const d=await r.json();
+  document.getElementById('resend-btn').textContent='Resend';
+  if(!d.ok) showErr('otp-err',d.error); else hideErr('otp-err');
+}
+
+function goBackFromOTP(){show(otpFlow==='login'?'s-phone':'s-forgot');}
+
+async function verifyOTP(){
+  hideErr('otp-err');
+  const otp=['o1','o2','o3','o4','o5','o6'].map(id=>document.getElementById(id).value).join('');
+  if(otp.length<6) return showErr('otp-err','Please enter the 6-digit OTP');
+  loading('otp-txt','otp-spin',true);
+  const r=await fetch('/verify-otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:otpTarget,otp,flow:otpFlow})});
+  const d=await r.json();
+  loading('otp-txt','otp-spin',false,'Verify OTP');
+  if(d.ok){
+    if(d.action==='redirect') window.location.href='/';
+    else if(d.action==='new_password'){resetToken=d.token;show('s-newpass');document.getElementById('new-pass').focus();}
+  } else showErr('otp-err',d.error);
+}
+
+async function doResetPassword(){
+  hideErr('newpass-err');
+  const p1=document.getElementById('new-pass').value;
+  const p2=document.getElementById('confirm-pass').value;
+  if(p1.length<6) return showErr('newpass-err','Password must be at least 6 characters');
+  if(p1!==p2) return showErr('newpass-err','Passwords do not match');
+  loading('newpass-txt','newpass-spin',true);
+  const r=await fetch('/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p1,token:resetToken})});
+  const d=await r.json();
+  loading('newpass-txt','newpass-spin',false,'Set Password');
+  if(d.ok) window.location.href='/';
+  else showErr('newpass-err',d.error);
+}
+
+function otpNext(el,nextId){if(el.value.length===1&&nextId)document.getElementById(nextId).focus();}
+function otpDone(){verifyOTP();}
+function otpBack(e,el,prevId){if(e.key==='Backspace'&&!el.value&&prevId)document.getElementById(prevId).focus();}
+
+document.addEventListener('keypress',e=>{
+  if(e.key!=='Enter') return;
+  const a=document.querySelector('.screen.active');
+  if(!a) return;
+  const id=a.id;
+  if(id==='s-login') doLogin();
+  else if(id==='s-register') doRegister();
+  else if(id==='s-phone') sendOTP('login');
+  else if(id==='s-forgot') sendOTP('reset');
+  else if(id==='s-newpass') doResetPassword();
+});
 </script>
 </body>
 </html>

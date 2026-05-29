@@ -6,10 +6,8 @@
 <title>AI Marketing Hub</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-  * { font-family: 'Inter', sans-serif; }
+  * { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
   .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
   .card-hover { transition: all 0.3s ease; }
   .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
@@ -40,6 +38,16 @@
   .spin { animation: spin 1s linear infinite; }
   @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
   .tool-card:hover .tool-icon { transform: scale(1.1); transition: transform 0.3s; }
+  #sidebar { transition: transform 0.3s ease; }
+  @media (max-width: 767px) {
+    #sidebar { position: fixed; top: 0; left: 0; height: 100%; z-index: 50; transform: translateX(-100%); }
+    #sidebar.open { transform: translateX(0); }
+    #sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; }
+    #sidebar-overlay.open { display: block; }
+    .tab-content { padding: 1rem !important; }
+    .mobile-header { display: flex !important; }
+  }
+  .mobile-header { display: none; align-items: center; justify-content: space-between; padding: 14px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; flex-shrink: 0; }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -89,8 +97,25 @@
 </div>
 
 <!-- Sidebar -->
-<div class="flex h-screen overflow-hidden">
-  <aside class="w-64 gradient-bg text-white flex flex-col flex-shrink-0 overflow-y-auto">
+<!-- Mobile sidebar overlay -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="flex flex-col h-screen overflow-hidden">
+<!-- Mobile header -->
+<div class="mobile-header">
+  <div class="flex items-center gap-2">
+    <div class="w-8 h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    </div>
+    <span class="font-bold text-base">AI Marketing Hub</span>
+  </div>
+  <button onclick="toggleSidebar()" class="w-9 h-9 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+  </button>
+</div>
+
+<div class="flex flex-1 overflow-hidden">
+  <aside id="sidebar" class="w-64 gradient-bg text-white flex flex-col flex-shrink-0 overflow-y-auto">
     <div class="p-6 border-b border-white border-opacity-20">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
@@ -133,6 +158,22 @@
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
         AI Advisor
       </button>
+      <button onclick="showTab('prompt')" id="nav-prompt" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-sm hover:bg-white hover:bg-opacity-10 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+        Prompt Generator
+      </button>
+      <button onclick="showTab('askai')" id="nav-askai" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-sm hover:bg-white hover:bg-opacity-10 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg>
+        Ask AI Anything
+      </button>
+      <button onclick="showTab('imageai')" id="nav-imageai" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-sm hover:bg-white hover:bg-opacity-10 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Image AI
+      </button>
+      <a href="/about" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-sm hover:bg-white hover:bg-opacity-10 transition-colors text-white no-underline">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        About Us
+      </a>
     </nav>
     <div class="p-4 border-t border-white border-opacity-20 space-y-3">
       <!-- User info -->
@@ -171,6 +212,7 @@
         </div>
         <div class="flex gap-3">
           <button onclick="changeKey()" class="text-xs text-purple-300 hover:text-white transition-colors">API Key</button>
+          <a href="/about" class="text-xs text-purple-300 hover:text-white transition-colors">About</a>
           <a href="/logout" class="text-xs text-purple-300 hover:text-white transition-colors">Logout</a>
         </div>
       </div>
@@ -264,6 +306,45 @@
             <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full">Strategy</span>
             <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full">Ideas</span>
             <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full">Growth</span>
+          </div>
+        </div>
+
+        <div onclick="showTab('askai')" class="bg-white rounded-2xl p-6 shadow-sm card-hover cursor-pointer border border-gray-100">
+          <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg>
+          </div>
+          <h3 class="font-bold text-gray-800 text-lg">Ask AI Anything</h3>
+          <p class="text-gray-500 text-sm mt-1">Recipes, how-to guides, science, DIY, business — any question answered</p>
+          <div class="mt-4 flex gap-2 flex-wrap">
+            <span class="bg-orange-50 text-orange-700 text-xs px-2 py-1 rounded-full">Recipes</span>
+            <span class="bg-orange-50 text-orange-700 text-xs px-2 py-1 rounded-full">How-to</span>
+            <span class="bg-orange-50 text-orange-700 text-xs px-2 py-1 rounded-full">Anything</span>
+          </div>
+        </div>
+
+        <div onclick="showTab('imageai')" class="bg-white rounded-2xl p-6 shadow-sm card-hover cursor-pointer border border-gray-100">
+          <div class="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </div>
+          <h3 class="font-bold text-gray-800 text-lg">Image AI</h3>
+          <p class="text-gray-500 text-sm mt-1">Upload any photo — get AI prompts, marketing ideas, captions & editing suggestions</p>
+          <div class="mt-4 flex gap-2 flex-wrap">
+            <span class="bg-teal-50 text-teal-700 text-xs px-2 py-1 rounded-full">Upload Photo</span>
+            <span class="bg-teal-50 text-teal-700 text-xs px-2 py-1 rounded-full">AI Prompts</span>
+            <span class="bg-teal-50 text-teal-700 text-xs px-2 py-1 rounded-full">Ideas</span>
+          </div>
+        </div>
+
+        <div onclick="showTab('prompt')" class="bg-white rounded-2xl p-6 shadow-sm card-hover cursor-pointer border border-gray-100">
+          <div class="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+          </div>
+          <h3 class="font-bold text-gray-800 text-lg">Prompt Generator</h3>
+          <p class="text-gray-500 text-sm mt-1">Generate perfect prompts for ChatGPT, Midjourney, DALL-E, Runway & more</p>
+          <div class="mt-4 flex gap-2 flex-wrap">
+            <span class="bg-violet-50 text-violet-700 text-xs px-2 py-1 rounded-full">ChatGPT</span>
+            <span class="bg-violet-50 text-violet-700 text-xs px-2 py-1 rounded-full">Midjourney</span>
+            <span class="bg-violet-50 text-violet-700 text-xs px-2 py-1 rounded-full">DALL-E</span>
           </div>
         </div>
       </div>
@@ -363,6 +444,40 @@
               <p class="text-sm">Your generated content will appear here</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- ASK AI ANYTHING inside Content Generator -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mt-6">
+        <div class="p-5 border-b border-gray-100 flex items-center gap-3">
+          <div class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-800">Ask AI Anything</h3>
+            <p class="text-xs text-gray-500">Recipes • How-to guides • DIY • Science • Business • Any question</p>
+          </div>
+        </div>
+        <div id="cg-askai-messages" class="p-5 space-y-3 max-h-72 overflow-y-auto">
+          <div class="flex gap-3">
+            <div class="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <div class="bg-gray-50 rounded-2xl rounded-tl-none p-3 text-sm text-gray-700">
+              Ask me anything! Recipes, how-to guides, DIY, science, fitness, cooking — I know it all 🙌
+            </div>
+          </div>
+        </div>
+        <div class="px-5 pb-3 flex flex-wrap gap-2">
+          <button onclick="cgQuickAsk('How to make a perfect cup of tea?')" class="text-xs bg-orange-50 text-orange-700 px-3 py-1 rounded-full hover:bg-orange-100 transition-colors">☕ Tea recipe</button>
+          <button onclick="cgQuickAsk('How to bake a chocolate cake?')" class="text-xs bg-pink-50 text-pink-700 px-3 py-1 rounded-full hover:bg-pink-100 transition-colors">🎂 Cake recipe</button>
+          <button onclick="cgQuickAsk('How are sneakers manufactured step by step?')" class="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-100 transition-colors">👟 How sneakers are made</button>
+          <button onclick="cgQuickAsk('How to make biryani at home?')" class="text-xs bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full hover:bg-yellow-100 transition-colors">🍛 Biryani recipe</button>
+          <button onclick="cgQuickAsk('How to start a YouTube channel?')" class="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full hover:bg-green-100 transition-colors">▶️ Start YouTube channel</button>
+        </div>
+        <div class="p-4 border-t border-gray-100 flex gap-3">
+          <input id="cg-askai-input" type="text" placeholder="Ask anything... How to make pizza? How does solar energy work? How to code a website?" class="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm transition-colors" onkeypress="if(event.key==='Enter') cgSendAsk()"/>
+          <button onclick="cgSendAsk()" class="px-5 py-2.5 bg-orange-500 text-white rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity">Ask</button>
         </div>
       </div>
     </div>
@@ -520,194 +635,40 @@
         <p class="text-gray-500 text-sm mt-1">Built-in editors + best AI tools — everything in one place</p>
       </div>
 
-      <!-- ===== BUILT-IN VIDEO EDITOR ===== -->
+      <!-- ===== VIDEO EDITOR — Veed.io ===== -->
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
         <div class="p-5 border-b border-gray-100 flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-black to-gray-700 rounded-xl flex items-center justify-center">
+            <div class="w-10 h-10 bg-gradient-to-br from-pink-500 to-orange-500 rounded-xl flex items-center justify-center">
               <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.868v6.264a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
             </div>
             <div>
-              <h3 class="font-bold text-gray-800">Built-in Video Editor</h3>
-              <p class="text-xs text-gray-500">Trim • Resize • Captions • Speed • Mute • GIF — works inside this app</p>
+              <h3 class="font-bold text-gray-800">Video Editor — Veed.io</h3>
+              <p class="text-xs text-gray-500">Trim • Resize • Captions • Speed • Subtitles • Effects — no download needed</p>
             </div>
           </div>
-          <span class="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">100% FREE</span>
+          <span class="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">FREE Plan</span>
         </div>
         <div class="p-6">
-          <!-- Upload area -->
-          <div id="vid-upload-area" class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-400 transition-colors mb-5"
-               onclick="document.getElementById('vid-file').click()"
-               ondragover="event.preventDefault();this.classList.add('border-indigo-400')"
-               ondragleave="this.classList.remove('border-indigo-400')"
-               ondrop="event.preventDefault();this.classList.remove('border-indigo-400');handleVidDrop(event)">
-            <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-            <p class="text-gray-500 font-medium">Click or drag & drop your video here</p>
-            <p class="text-gray-400 text-xs mt-1">MP4, MOV, AVI, WebM supported</p>
-            <input type="file" id="vid-file" accept="video/*" class="hidden" onchange="loadVideo(this)"/>
+          <p class="text-gray-600 text-sm mb-5">Best free browser-based video editor — trim, captions, subtitles, resize for TikTok/Instagram/YouTube, speed control, and more. No download required, works directly in your browser.</p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+            <div class="bg-pink-50 rounded-xl p-4 text-center">
+              <p class="text-2xl mb-1">✂️</p>
+              <p class="text-sm font-semibold text-gray-800">Trim & Cut</p>
+            </div>
+            <div class="bg-pink-50 rounded-xl p-4 text-center">
+              <p class="text-2xl mb-1">📝</p>
+              <p class="text-sm font-semibold text-gray-800">Auto Captions</p>
+            </div>
+            <div class="bg-pink-50 rounded-xl p-4 text-center">
+              <p class="text-2xl mb-1">📐</p>
+              <p class="text-sm font-semibold text-gray-800">Resize for Platform</p>
+            </div>
           </div>
-
-          <!-- Video preview + controls (hidden until file loaded) -->
-          <div id="vid-editor" class="hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <!-- Preview -->
-              <div>
-                <p class="text-sm font-medium text-gray-700 mb-2">Preview</p>
-                <video id="vid-preview" controls class="w-full rounded-xl bg-black max-h-64"></video>
-                <p id="vid-info" class="text-xs text-gray-400 mt-1"></p>
-              </div>
-              <!-- Controls -->
-              <div class="space-y-4">
-                <!-- Operation selector -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">What do you want to do?</label>
-                  <select id="vid-op" onchange="showVidOptions()" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors">
-                    <option value="trim">✂️ Trim video (cut start/end)</option>
-                    <option value="resize">📐 Resize for platform (TikTok / Instagram / YouTube)</option>
-                    <option value="speed">⚡ Change speed (fast / slow)</option>
-                    <option value="mute">🔇 Remove audio / Mute</option>
-                    <option value="caption">📝 Add text caption on video</option>
-                    <option value="gif">🎞️ Convert to GIF</option>
-                    <option value="audio">🎵 Extract audio (MP3)</option>
-                    <option value="compress">📦 Compress (reduce file size)</option>
-                  </select>
-                </div>
-
-                <!-- Trim options -->
-                <div id="opt-trim" class="vid-opt space-y-3">
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label class="text-xs font-medium text-gray-600">Start time (seconds)</label>
-                      <input type="number" id="trim-start" value="0" min="0" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500"/>
-                    </div>
-                    <div>
-                      <label class="text-xs font-medium text-gray-600">End time (seconds)</label>
-                      <input type="number" id="trim-end" value="30" min="1" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500"/>
-                    </div>
-                  </div>
-                  <p class="text-xs text-gray-400">Tip: Play the video above to find the exact seconds you want</p>
-                </div>
-
-                <!-- Resize options -->
-                <div id="opt-resize" class="vid-opt hidden">
-                  <label class="text-xs font-medium text-gray-600 mb-1 block">Platform format</label>
-                  <div class="grid grid-cols-3 gap-2">
-                    <label class="flex flex-col items-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-indigo-400 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-                      <input type="radio" name="resize-platform" value="tiktok" class="hidden" checked/>
-                      <span class="text-lg">📱</span>
-                      <span class="text-xs font-medium mt-1">TikTok</span>
-                      <span class="text-xs text-gray-400">9:16</span>
-                    </label>
-                    <label class="flex flex-col items-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-indigo-400 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-                      <input type="radio" name="resize-platform" value="instagram" class="hidden"/>
-                      <span class="text-lg">📸</span>
-                      <span class="text-xs font-medium mt-1">Instagram</span>
-                      <span class="text-xs text-gray-400">1:1</span>
-                    </label>
-                    <label class="flex flex-col items-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-indigo-400 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-                      <input type="radio" name="resize-platform" value="youtube" class="hidden"/>
-                      <span class="text-lg">▶️</span>
-                      <span class="text-xs font-medium mt-1">YouTube</span>
-                      <span class="text-xs text-gray-400">16:9</span>
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Speed options -->
-                <div id="opt-speed" class="vid-opt hidden">
-                  <label class="text-xs font-medium text-gray-600 mb-1 block">Speed</label>
-                  <div class="grid grid-cols-4 gap-2">
-                    <label class="flex flex-col items-center p-2 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-indigo-400 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-                      <input type="radio" name="speed-val" value="0.5" class="hidden"/><span class="text-sm font-bold">0.5x</span><span class="text-xs text-gray-400">Slow</span>
-                    </label>
-                    <label class="flex flex-col items-center p-2 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-indigo-400 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-                      <input type="radio" name="speed-val" value="0.75" class="hidden"/><span class="text-sm font-bold">0.75x</span><span class="text-xs text-gray-400">Slow</span>
-                    </label>
-                    <label class="flex flex-col items-center p-2 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-indigo-400 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-                      <input type="radio" name="speed-val" value="1.5" class="hidden"/><span class="text-sm font-bold">1.5x</span><span class="text-xs text-gray-400">Fast</span>
-                    </label>
-                    <label class="flex flex-col items-center p-2 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-indigo-400 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-                      <input type="radio" name="speed-val" value="2" class="hidden" checked/><span class="text-sm font-bold">2x</span><span class="text-xs text-gray-400">Fast</span>
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Caption options -->
-                <div id="opt-caption" class="vid-opt hidden space-y-3">
-                  <div>
-                    <label class="text-xs font-medium text-gray-600">Caption text</label>
-                    <input type="text" id="caption-text" placeholder="e.g. Your Brand Name" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500"/>
-                  </div>
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label class="text-xs font-medium text-gray-600">Position</label>
-                      <select id="caption-pos" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500">
-                        <option value="top">Top</option>
-                        <option value="center">Center</option>
-                        <option value="bottom" selected>Bottom</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label class="text-xs font-medium text-gray-600">Color</label>
-                      <select id="caption-color" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500">
-                        <option value="white">White</option>
-                        <option value="yellow">Yellow</option>
-                        <option value="black">Black</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- GIF options -->
-                <div id="opt-gif" class="vid-opt hidden space-y-3">
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label class="text-xs font-medium text-gray-600">Start (sec)</label>
-                      <input type="number" id="gif-start" value="0" min="0" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500"/>
-                    </div>
-                    <div>
-                      <label class="text-xs font-medium text-gray-600">Duration (sec)</label>
-                      <input type="number" id="gif-dur" value="5" min="1" max="15" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500"/>
-                    </div>
-                  </div>
-                  <p class="text-xs text-gray-400">Max 15 seconds for smooth GIF</p>
-                </div>
-
-                <!-- Mute / Audio / Compress: no extra options -->
-                <div id="opt-mute" class="vid-opt hidden"><p class="text-sm text-gray-500 bg-gray-50 rounded-xl p-3">Audio track will be removed from the video.</p></div>
-                <div id="opt-audio" class="vid-opt hidden"><p class="text-sm text-gray-500 bg-gray-50 rounded-xl p-3">Audio will be extracted as an MP3 file.</p></div>
-                <div id="opt-compress" class="vid-opt hidden"><p class="text-sm text-gray-500 bg-gray-50 rounded-xl p-3">Video will be compressed to reduce file size (lower bitrate).</p></div>
-
-                <!-- Process button -->
-                <button onclick="processVideo()" id="vid-process-btn" class="w-full py-3 gradient-bg text-white rounded-xl font-bold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  <span id="vid-btn-text">Process Video</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Progress + output -->
-            <div id="vid-progress-wrap" class="hidden mt-4">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-sm font-medium text-indigo-700" id="vid-progress-label">Processing...</span>
-                <span class="text-sm text-indigo-600" id="vid-progress-pct">0%</span>
-              </div>
-              <div class="w-full bg-gray-100 rounded-full h-3">
-                <div id="vid-progress-bar" class="gradient-bg h-3 rounded-full transition-all duration-300" style="width:0%"></div>
-              </div>
-            </div>
-
-            <div id="vid-output" class="hidden mt-5 p-4 bg-green-50 border border-green-200 rounded-xl">
-              <p class="text-green-700 font-semibold text-sm mb-3">✅ Done! Your video is ready.</p>
-              <div id="vid-output-preview" class="mb-3"></div>
-              <a id="vid-download-btn" href="#" download class="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                Download
-              </a>
-            </div>
-
-            <button onclick="resetVideoEditor()" class="mt-3 text-xs text-gray-400 hover:text-gray-600 transition-colors">← Upload a different video</button>
-          </div>
+          <a href="https://www.veed.io" target="_blank" class="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-xl font-bold text-sm hover:opacity-90 transition-opacity">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            Open Veed.io Video Editor
+          </a>
         </div>
       </div>
 
@@ -1087,8 +1048,207 @@
       </div>
     </div>
 
+    <!-- IMAGE AI TAB -->
+    <div id="tab-imageai" class="tab-content hidden p-8">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Image AI 🖼️</h2>
+        <p class="text-gray-500 text-sm mt-1">Upload any photo — ask what to do with it, get AI prompts, editing ideas, marketing suggestions & more</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Upload + Question -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <h3 class="font-semibold text-gray-800 mb-4">Upload Your Image</h3>
+
+          <!-- Drop zone -->
+          <div id="img-dropzone" onclick="document.getElementById('img-file').click()"
+            ondragover="event.preventDefault();this.classList.add('border-indigo-400','bg-indigo-50')"
+            ondragleave="this.classList.remove('border-indigo-400','bg-indigo-50')"
+            ondrop="event.preventDefault();this.classList.remove('border-indigo-400','bg-indigo-50');handleImgDrop(event)"
+            class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all mb-4">
+            <div id="img-preview-wrap" class="hidden mb-3">
+              <img id="img-preview" class="max-h-48 mx-auto rounded-xl object-contain"/>
+            </div>
+            <div id="img-upload-hint">
+              <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <p class="text-gray-500 text-sm font-medium">Click or drag & drop your image</p>
+              <p class="text-gray-400 text-xs mt-1">JPG, PNG, WEBP supported</p>
+            </div>
+            <input type="file" id="img-file" accept="image/*" class="hidden" onchange="loadImgFile(this)"/>
+          </div>
+
+          <!-- Question -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">What do you want to know?</label>
+            <textarea id="img-question" rows="3" placeholder="e.g. What marketing prompt should I use for this image? / How can I improve this product photo? / What Midjourney prompt will recreate this style?" class="w-full px-3 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors resize-none"></textarea>
+          </div>
+
+          <!-- Quick questions -->
+          <div class="flex flex-wrap gap-2 mb-4">
+            <button onclick="setImgQ('What AI prompt should I use to recreate or enhance this image?')" class="text-xs bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full hover:bg-indigo-100">✨ Get AI prompt</button>
+            <button onclick="setImgQ('How can I use this image for marketing? Give ideas and suggestions.')" class="text-xs bg-purple-50 text-purple-700 px-2.5 py-1 rounded-full hover:bg-purple-100">📢 Marketing ideas</button>
+            <button onclick="setImgQ('Write a Midjourney prompt to recreate this image with better quality.')" class="text-xs bg-pink-50 text-pink-700 px-2.5 py-1 rounded-full hover:bg-pink-100">🎨 Midjourney prompt</button>
+            <button onclick="setImgQ('Describe this image in detail and suggest how to improve it.')" class="text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full hover:bg-green-100">🔍 Describe & improve</button>
+            <button onclick="setImgQ('Write an Instagram caption and hashtags for this image.')" class="text-xs bg-orange-50 text-orange-700 px-2.5 py-1 rounded-full hover:bg-orange-100">📱 Instagram caption</button>
+          </div>
+
+          <button onclick="askAboutImage()" id="img-ask-btn" class="w-full py-3 gradient-bg text-white rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <span id="img-ask-txt">Ask AI About This Image</span>
+          </button>
+        </div>
+
+        <!-- Answer -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-800">AI Answer</h3>
+            <button onclick="copyResult('img-result')" id="img-copy-btn" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium hidden">Copy</button>
+          </div>
+          <div id="img-loading" class="loading items-center gap-2 text-indigo-600 mb-3">
+            <svg class="w-5 h-5 spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span class="text-sm font-medium">Analyzing your image...</span>
+          </div>
+          <div id="img-placeholder" class="flex-1 flex items-center justify-center text-gray-300 min-h-64">
+            <div class="text-center">
+              <svg class="w-12 h-12 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <p class="text-sm">Upload an image and ask a question</p>
+            </div>
+          </div>
+          <div id="img-result" class="result-box flex-1 p-4 bg-gray-50 rounded-xl border border-gray-200 prose max-w-none text-sm text-gray-700 overflow-y-auto min-h-64"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ASK AI ANYTHING TAB -->
+    <div id="tab-askai" class="tab-content hidden p-8">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Ask AI Anything 🌍</h2>
+        <p class="text-gray-500 text-sm mt-1">Ask any question — recipes, how-to guides, science, history, DIY, business, and more</p>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col" style="height:65vh">
+        <!-- Chat messages -->
+        <div id="askai-messages" class="flex-1 overflow-y-auto p-6 space-y-4">
+          <div class="flex gap-3">
+            <div class="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <div class="bg-gray-50 rounded-2xl rounded-tl-none p-4 max-w-2xl text-sm text-gray-700">
+              Hi! I can answer <strong>anything</strong> — recipes, how-to guides, DIY projects, science, history, cooking, fitness, business, travel, technology, and much more. What would you like to know? 😊
+            </div>
+          </div>
+        </div>
+        <!-- Quick questions -->
+        <div class="px-6 pb-3 flex flex-wrap gap-2">
+          <button onclick="quickAskAI('How to make a perfect cup of tea?')" class="text-xs bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full hover:bg-orange-100 transition-colors">☕ How to make tea?</button>
+          <button onclick="quickAskAI('How to bake a chocolate cake from scratch?')" class="text-xs bg-pink-50 text-pink-700 px-3 py-1.5 rounded-full hover:bg-pink-100 transition-colors">🎂 Chocolate cake recipe</button>
+          <button onclick="quickAskAI('How are sneakers manufactured?')" class="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full hover:bg-blue-100 transition-colors">👟 How are sneakers made?</button>
+          <button onclick="quickAskAI('What are the best tips for starting a business?')" class="text-xs bg-green-50 text-green-700 px-3 py-1.5 rounded-full hover:bg-green-100 transition-colors">💼 Starting a business</button>
+          <button onclick="quickAskAI('How to lose weight effectively?')" class="text-xs bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full hover:bg-purple-100 transition-colors">💪 Weight loss tips</button>
+        </div>
+        <!-- Input -->
+        <div class="p-4 border-t border-gray-100 flex gap-3">
+          <input id="askai-input" type="text" placeholder="Ask me anything... e.g. How to make biryani? How does AI work? How to fix a leaking tap?" class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors" onkeypress="if(event.key==='Enter') sendAskAI()"/>
+          <button onclick="sendAskAI()" class="px-5 py-3 gradient-bg text-white rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            Ask
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROMPT GENERATOR TAB -->
+    <div id="tab-prompt" class="tab-content hidden p-8">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">AI Prompt Generator</h2>
+        <p class="text-gray-500 text-sm mt-1">Generate powerful prompts for ChatGPT, Claude, Midjourney, Stable Diffusion & more</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Input side -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <h3 class="font-semibold text-gray-800 mb-4">Configure Your Prompt</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">AI Tool</label>
+              <select id="prompt-tool" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors">
+                <option value="chatgpt">ChatGPT / Claude (Text AI)</option>
+                <option value="midjourney">Midjourney (Image AI)</option>
+                <option value="dalle">DALL-E (Image AI)</option>
+                <option value="stable">Stable Diffusion (Image AI)</option>
+                <option value="runway">Runway / Sora (Video AI)</option>
+                <option value="heygen">HeyGen (Avatar Video)</option>
+                <option value="general">General Purpose</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Purpose</label>
+              <select id="prompt-purpose" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors">
+                <option>Marketing content creation</option>
+                <option>Social media post</option>
+                <option>Product advertisement</option>
+                <option>Brand storytelling</option>
+                <option>Email campaign</option>
+                <option>Blog / Article writing</option>
+                <option>Logo / Brand image</option>
+                <option>Product photo / Ad creative</option>
+                <option>Promotional video</option>
+                <option>Customer testimonial</option>
+                <option>Explainer / Tutorial</option>
+                <option>Custom (describe below)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Describe what you want</label>
+              <textarea id="prompt-topic" rows="4" placeholder="e.g. I run a clothing brand called StyleHub targeting 18-25 year olds. I want a prompt to generate a product photo for Instagram showing a white hoodie in a minimalist street style setting." class="w-full px-3 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors resize-none"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Tone / Style <span class="text-gray-400 font-normal">(optional)</span></label>
+              <input type="text" id="prompt-style" placeholder="e.g. professional, creative, minimalist, vibrant..." class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm transition-colors"/>
+            </div>
+            <button onclick="generatePrompt()" class="w-full py-3 gradient-bg text-white rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+              Generate Prompt
+            </button>
+          </div>
+        </div>
+
+        <!-- Output side -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-800">Your Generated Prompt</h3>
+            <button onclick="copyPrompt()" id="copy-prompt-btn" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-semibold hover:bg-indigo-100 transition-colors hidden">Copy Prompt</button>
+          </div>
+          <div id="prompt-loading" class="loading items-center gap-2 text-indigo-600 mb-4">
+            <svg class="w-5 h-5 spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span class="text-sm">Crafting your perfect prompt...</span>
+          </div>
+          <div id="prompt-placeholder" class="text-center py-12 text-gray-400">
+            <svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+            <p class="text-sm">Fill in the details and click Generate</p>
+          </div>
+          <div id="prompt-result" class="result-box">
+            <div id="prompt-output" class="bg-gray-50 rounded-xl p-4 border-2 border-dashed border-gray-200 text-sm text-gray-800 leading-relaxed font-mono whitespace-pre-wrap"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick prompts -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mt-6">
+        <h3 class="font-semibold text-gray-800 mb-3">Quick Start — Click to Try</h3>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="quickPrompt('Instagram ad for a clothing brand','chatgpt','Product advertisement')" class="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors">👗 Clothing brand Instagram ad</button>
+          <button onclick="quickPrompt('Product photo for a food business','midjourney','Product photo / Ad creative')" class="text-xs bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full hover:bg-purple-100 transition-colors">🍕 Food product photo (Midjourney)</button>
+          <button onclick="quickPrompt('60-second promo video for a gym','runway','Promotional video')" class="text-xs bg-pink-50 text-pink-700 px-3 py-1.5 rounded-full hover:bg-pink-100 transition-colors">🏋️ Gym promo video (Runway)</button>
+          <button onclick="quickPrompt('Email newsletter for a startup launch','chatgpt','Email campaign')" class="text-xs bg-green-50 text-green-700 px-3 py-1.5 rounded-full hover:bg-green-100 transition-colors">📧 Startup launch email</button>
+          <button onclick="quickPrompt('Logo concept for a tech startup','dalle','Logo / Brand image')" class="text-xs bg-yellow-50 text-yellow-700 px-3 py-1.5 rounded-full hover:bg-yellow-100 transition-colors">💡 Tech startup logo (DALL-E)</button>
+          <button onclick="quickPrompt('Social media post for a real estate agency','chatgpt','Social media post')" class="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full hover:bg-blue-100 transition-colors">🏠 Real estate social post</button>
+        </div>
+      </div>
+    </div>
+
   </main>
-</div>
+</div><!-- end flex-1 inner row -->
+</div><!-- end flex-col outer wrapper -->
 
 <script>
 async function saveApiKey() {
@@ -1135,11 +1295,21 @@ function updateUsage(data) {
   }
 }
 
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
 function showTab(name) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('bg-white','bg-opacity-20'));
   document.getElementById('tab-' + name).classList.remove('hidden');
   document.getElementById('nav-' + name).classList.add('bg-white','bg-opacity-20');
+  closeSidebar();
 }
 
 function showLoading(id, show) {
@@ -1303,186 +1473,6 @@ document.getElementById('api-key-input').addEventListener('keypress', function(e
   if (e.key === 'Enter') saveApiKey();
 });
 
-// ═══════════════════════════════════════════════
-// VIDEO EDITOR (FFmpeg.wasm)
-// ═══════════════════════════════════════════════
-const { createFFmpeg, fetchFile } = FFmpeg;
-const ffmpeg = createFFmpeg({ log: false });
-let ffmpegLoaded = false;
-let currentVideoFile = null;
-
-async function ensureFFmpeg() {
-  if (!ffmpegLoaded) {
-    document.getElementById('vid-btn-text').textContent = 'Loading video engine (once)...';
-    await ffmpeg.load();
-    ffmpegLoaded = true;
-    document.getElementById('vid-btn-text').textContent = 'Process Video';
-  }
-}
-
-function loadVideo(input) {
-  const file = input.files[0];
-  if (!file) return;
-  currentVideoFile = file;
-  const url = URL.createObjectURL(file);
-  const preview = document.getElementById('vid-preview');
-  preview.src = url;
-  preview.onloadedmetadata = () => {
-    document.getElementById('vid-info').textContent =
-      `Duration: ${Math.round(preview.duration)}s | Size: ${(file.size/1024/1024).toFixed(1)}MB`;
-    document.getElementById('trim-end').value = Math.round(preview.duration);
-    document.getElementById('gif-dur').value = Math.min(5, Math.round(preview.duration));
-  };
-  document.getElementById('vid-upload-area').classList.add('hidden');
-  document.getElementById('vid-editor').classList.remove('hidden');
-  document.getElementById('vid-output').classList.add('hidden');
-  showVidOptions();
-}
-
-function handleVidDrop(e) {
-  const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('video/')) {
-    const dt = new DataTransfer();
-    dt.items.add(file);
-    document.getElementById('vid-file').files = dt.files;
-    loadVideo(document.getElementById('vid-file'));
-  }
-}
-
-function showVidOptions() {
-  document.querySelectorAll('.vid-opt').forEach(el => el.classList.add('hidden'));
-  const op = document.getElementById('vid-op').value;
-  const el = document.getElementById('opt-' + op);
-  if (el) el.classList.remove('hidden');
-}
-
-async function processVideo() {
-  if (!currentVideoFile) return;
-  try {
-    await ensureFFmpeg();
-  } catch(e) {
-    alert('Failed to load video engine: ' + e.message);
-    return;
-  }
-
-  const op = document.getElementById('vid-op').value;
-  const btn = document.getElementById('vid-process-btn');
-  btn.disabled = true;
-
-  document.getElementById('vid-progress-wrap').classList.remove('hidden');
-  document.getElementById('vid-output').classList.add('hidden');
-  setProgress(5, 'Reading file...');
-
-  const inName = 'input.' + currentVideoFile.name.split('.').pop();
-  ffmpeg.FS('writeFile', inName, await fetchFile(currentVideoFile));
-  setProgress(20, 'Processing...');
-
-  let outName = 'output.mp4';
-  let mimeType = 'video/mp4';
-  let args = [];
-
-  try {
-    if (op === 'trim') {
-      const start = document.getElementById('trim-start').value;
-      const end   = document.getElementById('trim-end').value;
-      const dur   = end - start;
-      args = ['-i', inName, '-ss', String(start), '-t', String(dur), '-c', 'copy', outName];
-
-    } else if (op === 'resize') {
-      const plat = document.querySelector('input[name="resize-platform"]:checked').value;
-      const scales = { tiktok:'1080:1920', instagram:'1080:1080', youtube:'1920:1080' };
-      const s = scales[plat];
-      args = ['-i', inName, '-vf',
-        `scale=${s}:force_original_aspect_ratio=decrease,pad=${s}:(ow-iw)/2:(oh-ih)/2:black`,
-        '-c:a', 'copy', outName];
-
-    } else if (op === 'speed') {
-      const spd = document.querySelector('input[name="speed-val"]:checked').value;
-      const pts = (1/parseFloat(spd)).toFixed(4);
-      const atempo = Math.min(2.0, Math.max(0.5, parseFloat(spd)));
-      args = ['-i', inName, '-vf', `setpts=${pts}*PTS`, '-af', `atempo=${atempo}`, outName];
-
-    } else if (op === 'mute') {
-      args = ['-i', inName, '-an', '-c:v', 'copy', outName];
-
-    } else if (op === 'caption') {
-      const text  = (document.getElementById('caption-text').value || 'Your Text').replace(/'/g, "\\'").replace(/:/g, "\\:");
-      const pos   = document.getElementById('caption-pos').value;
-      const color = document.getElementById('caption-color').value;
-      const yMap  = { top:'50', center:'(h-text_h)/2', bottom:'h-text_h-50' };
-      args = ['-i', inName, '-vf',
-        `drawtext=text='${text}':fontsize=48:fontcolor=${color}:borderw=3:bordercolor=black:x=(w-text_w)/2:y=${yMap[pos]}`,
-        '-c:a', 'copy', outName];
-
-    } else if (op === 'gif') {
-      outName = 'output.gif';
-      mimeType = 'image/gif';
-      const gs = document.getElementById('gif-start').value;
-      const gd = document.getElementById('gif-dur').value;
-      args = ['-i', inName, '-ss', String(gs), '-t', String(gd),
-              '-vf', 'scale=480:-1:flags=lanczos,fps=12', outName];
-
-    } else if (op === 'audio') {
-      outName = 'output.mp3';
-      mimeType = 'audio/mp3';
-      args = ['-i', inName, '-vn', '-acodec', 'libmp3lame', '-q:a', '2', outName];
-
-    } else if (op === 'compress') {
-      args = ['-i', inName, '-vcodec', 'libx264', '-crf', '28', '-preset', 'fast', '-acodec', 'aac', outName];
-    }
-
-    setProgress(40, 'Processing video...');
-    await ffmpeg.run(...args);
-    setProgress(85, 'Preparing download...');
-
-    const data = ffmpeg.FS('readFile', outName);
-    const blob = new Blob([data.buffer], { type: mimeType });
-    const url  = URL.createObjectURL(blob);
-
-    const dlBtn = document.getElementById('vid-download-btn');
-    dlBtn.href = url;
-    dlBtn.download = outName;
-
-    const prevWrap = document.getElementById('vid-output-preview');
-    prevWrap.innerHTML = '';
-    if (mimeType.startsWith('video')) {
-      prevWrap.innerHTML = `<video src="${url}" controls class="w-full rounded-xl max-h-48 bg-black"></video>`;
-    } else if (mimeType === 'image/gif') {
-      prevWrap.innerHTML = `<img src="${url}" class="w-full rounded-xl max-h-48 object-contain"/>`;
-    } else {
-      prevWrap.innerHTML = `<audio src="${url}" controls class="w-full"></audio>`;
-    }
-
-    setProgress(100, 'Done!');
-    document.getElementById('vid-output').classList.remove('hidden');
-
-    // cleanup
-    try { ffmpeg.FS('unlink', inName); } catch(e) {}
-    try { ffmpeg.FS('unlink', outName); } catch(e) {}
-
-  } catch(err) {
-    setProgress(0, 'Error: ' + err.message);
-    alert('Processing failed: ' + err.message + '\n\nTry a shorter/smaller video first.');
-  }
-
-  btn.disabled = false;
-  document.getElementById('vid-btn-text').textContent = 'Process Video';
-}
-
-function setProgress(pct, label) {
-  document.getElementById('vid-progress-bar').style.width = pct + '%';
-  document.getElementById('vid-progress-pct').textContent = pct + '%';
-  document.getElementById('vid-progress-label').textContent = label;
-}
-
-function resetVideoEditor() {
-  currentVideoFile = null;
-  document.getElementById('vid-upload-area').classList.remove('hidden');
-  document.getElementById('vid-editor').classList.add('hidden');
-  document.getElementById('vid-progress-wrap').classList.add('hidden');
-  document.getElementById('vid-output').classList.add('hidden');
-  document.getElementById('vid-file').value = '';
-}
 
 // ═══════════════════════════════════════════════
 // PHOTO EDITOR (Canvas API)
@@ -1620,13 +1610,181 @@ function resetPhotoEditor() {
   document.getElementById('photo-file').value = '';
 }
 
+// ── IMAGE AI ──────────────────────────────────────
+let currentImgB64 = null;
+let currentImgMime = 'image/jpeg';
+
+function loadImgFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  currentImgMime = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    currentImgB64 = dataUrl.split(',')[1];
+    document.getElementById('img-preview').src = dataUrl;
+    document.getElementById('img-preview-wrap').classList.remove('hidden');
+    document.getElementById('img-upload-hint').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleImgDrop(e) {
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById('img-file').files = dt.files;
+    loadImgFile(document.getElementById('img-file'));
+  }
+}
+
+function setImgQ(q) { document.getElementById('img-question').value = q; }
+
+async function askAboutImage() {
+  if (!currentImgB64) { alert('Please upload an image first'); return; }
+  const question = document.getElementById('img-question').value.trim() || 'What can I do with this image? Suggest AI prompts and marketing ideas.';
+  showLoading('img-loading', true);
+  document.getElementById('img-result').classList.remove('show');
+  document.getElementById('img-placeholder').style.display = 'none';
+  document.getElementById('img-copy-btn').classList.add('hidden');
+  document.getElementById('img-ask-txt').textContent = 'Analyzing...';
+  document.getElementById('img-ask-btn').disabled = true;
+
+  const res = await fetch('/api/image-ask', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({image: currentImgB64, mime: currentImgMime, question})
+  });
+  const data = await res.json();
+  showLoading('img-loading', false);
+  document.getElementById('img-ask-txt').textContent = 'Ask AI About This Image';
+  document.getElementById('img-ask-btn').disabled = false;
+
+  if (data.ok) {
+    updateUsage(data);
+    showResult('img-result', renderMD(data.result));
+    document.getElementById('img-copy-btn').classList.remove('hidden');
+  } else if (!handleLimitOrError(data)) {
+    document.getElementById('img-placeholder').style.display = '';
+    document.getElementById('img-placeholder').innerHTML = `<p class="text-red-500 text-sm text-center">${data.error}</p>`;
+  }
+}
+// ─────────────────────────────────────────────────
+
+async function cgSendAsk() {
+  const input = document.getElementById('cg-askai-input');
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = '';
+  cgAddMsg(q, 'user');
+  const thinking = cgAddMsg('...', 'ai-temp');
+  const res = await fetch('/api/ask', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({question: q})});
+  const data = await res.json();
+  thinking.remove();
+  if (data.ok) { updateUsage(data); cgAddMsg(data.result, 'ai'); }
+  else if (!handleLimitOrError(data)) cgAddMsg('Sorry, something went wrong.', 'ai');
+}
+function cgQuickAsk(q) { document.getElementById('cg-askai-input').value = q; cgSendAsk(); }
+function cgAddMsg(text, role) {
+  const chat = document.getElementById('cg-askai-messages');
+  const div = document.createElement('div');
+  if (role === 'user') {
+    div.className = 'flex gap-3 justify-end';
+    div.innerHTML = `<div class="bg-indigo-600 text-white rounded-2xl rounded-tr-none p-3 max-w-lg text-sm">${text}</div>`;
+  } else if (role === 'ai-temp') {
+    div.className = 'flex gap-3';
+    div.innerHTML = `<div class="w-7 h-7 gradient-bg rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"><svg class="w-3 h-3 text-white spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></div><div class="bg-gray-50 rounded-2xl rounded-tl-none p-3 text-sm text-gray-400 italic">Thinking...</div>`;
+  } else {
+    div.className = 'flex gap-3';
+    div.innerHTML = `<div class="w-7 h-7 gradient-bg rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"><svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div><div class="bg-gray-50 rounded-2xl rounded-tl-none p-3 max-w-lg prose text-sm text-gray-700">${renderMD(text)}</div>`;
+  }
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+async function sendAskAI() {
+  const input = document.getElementById('askai-input');
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = '';
+  addAskAIMessage(q, 'user');
+  const thinking = addAskAIMessage('Thinking...', 'ai-temp');
+  const res = await fetch('/api/ask', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({question: q})});
+  const data = await res.json();
+  thinking.remove();
+  if (data.ok) { updateUsage(data); addAskAIMessage(data.result, 'ai'); }
+  else if (!handleLimitOrError(data)) addAskAIMessage('Sorry, something went wrong. Please try again.', 'ai');
+}
+
+function quickAskAI(q) {
+  document.getElementById('askai-input').value = q;
+  sendAskAI();
+}
+
+function addAskAIMessage(text, role) {
+  const chat = document.getElementById('askai-messages');
+  const div = document.createElement('div');
+  if (role === 'user') {
+    div.className = 'flex gap-3 justify-end';
+    div.innerHTML = `<div class="bg-indigo-600 text-white rounded-2xl rounded-tr-none p-4 max-w-2xl text-sm">${text}</div>`;
+  } else if (role === 'ai-temp') {
+    div.className = 'flex gap-3';
+    div.innerHTML = `<div class="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"><svg class="w-4 h-4 text-white spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></div><div class="bg-gray-50 rounded-2xl rounded-tl-none p-4 text-sm text-gray-400 italic">Thinking...</div>`;
+  } else {
+    div.className = 'flex gap-3';
+    div.innerHTML = `<div class="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"><svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div><div class="bg-gray-50 rounded-2xl rounded-tl-none p-4 max-w-2xl prose text-sm text-gray-700">${renderMD(text)}</div>`;
+  }
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+async function generatePrompt() {
+  const topic = document.getElementById('prompt-topic').value.trim();
+  if (!topic) { alert('Please describe what you want'); return; }
+  const tool = document.getElementById('prompt-tool').value;
+  const purpose = document.getElementById('prompt-purpose').value;
+  const style = document.getElementById('prompt-style').value.trim();
+  showLoading('prompt-loading', true);
+  document.getElementById('prompt-result').classList.remove('show');
+  document.getElementById('prompt-placeholder').style.display = 'none';
+  document.getElementById('copy-prompt-btn').classList.add('hidden');
+  const res = await fetch('/api/prompt', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({tool, purpose, topic, style})});
+  const data = await res.json();
+  showLoading('prompt-loading', false);
+  if (data.ok) {
+    updateUsage(data);
+    document.getElementById('prompt-output').textContent = data.result;
+    document.getElementById('prompt-result').classList.add('show');
+    document.getElementById('copy-prompt-btn').classList.remove('hidden');
+  } else if (!handleLimitOrError(data)) {
+    document.getElementById('prompt-placeholder').style.display = '';
+    document.getElementById('prompt-placeholder').innerHTML = '<p class="text-red-500 text-sm">Error: ' + data.error + '</p>';
+  }
+}
+
+function quickPrompt(topic, tool, purpose) {
+  document.getElementById('prompt-topic').value = topic;
+  document.getElementById('prompt-tool').value = tool;
+  document.getElementById('prompt-purpose').value = purpose;
+  generatePrompt();
+}
+
+function copyPrompt() {
+  const text = document.getElementById('prompt-output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-prompt-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy Prompt', 2000);
+  });
+}
+
 function scrollToBuiltinEditor() {
   showTab('media');
   setTimeout(() => {
-    const el = document.getElementById('vid-upload-area') || document.getElementById('vid-editor');
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    // flash highlight
-    const card = el?.closest('.bg-white') || document.querySelector('#tab-media .bg-white');
+    const card = document.querySelector('#tab-media .bg-white');
     if (card) {
       card.style.boxShadow = '0 0 0 3px #6366f1';
       setTimeout(() => card.style.boxShadow = '', 1500);
