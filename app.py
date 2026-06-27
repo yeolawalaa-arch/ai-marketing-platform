@@ -377,7 +377,7 @@ def save_groq_key():
 def index():
     user = current_user()
     if not user:
-        return redirect(url_for("login"))
+        return render_template("auth.html", mode="login"), 200
     needs_key = not user.groq_api_key and not os.environ.get("GROQ_API_KEY")
     return render_template("index.html", user=user, needs_key=needs_key,
                            free_limit=FREE_DAILY_LIMIT,
