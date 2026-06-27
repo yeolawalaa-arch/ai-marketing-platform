@@ -16,7 +16,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "ai-marketing-secret-2024-change-i
 
 @app.before_request
 def force_https():
-    if (os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RENDER")) and not request.is_secure:
+    if os.environ.get("RAILWAY_ENVIRONMENT") and not request.is_secure:
         url = request.url.replace("http://", "https://", 1)
         return redirect(url, code=301)
 
